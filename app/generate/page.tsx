@@ -103,6 +103,9 @@ export default function GeneratePage() {
                       file:bg-blue-50 file:text-blue-700
                       hover:file:bg-blue-100"
             />
+            <p className="text-sm text-gray-600 mt-2">
+              If your CSV contains an <strong>Email</strong> column, certificates will be sent to those addresses.
+            </p>
           </div>
 
           <div className="flex justify-end">

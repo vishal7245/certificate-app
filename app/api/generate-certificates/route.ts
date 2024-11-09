@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
         ctx.drawImage(image, 0, 0);
 
-        template.placeholders.forEach((placeholder: any) => {
+        (template.placeholders as any[])?.forEach((placeholder: any) => {
           const value = record[placeholder.name];
           if (value) {
             ctx.font = '30px Arial';
