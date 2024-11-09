@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Template {
+  id           String        @id @default(cuid())
+  name         String
+  imageUrl     String
+  placeholders Json
+  certificates Certificate[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Certificate {
+  id              String   @id @default(cuid())
+  templateId      String
+  template        Template @relation(fields: [templateId], references: [id])
+  uniqueIdentifier String  @unique
+  data            Json
+  generatedImageUrl String
+  createdAt       DateTime @default(now())
+}
