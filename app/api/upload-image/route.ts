@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     // Parse the form data from the request
     const formData = await request.formData();
-    const image = formData.get("image"); // Extract the uploaded file
+    const image = formData.get("image");
 
     if (!image || !(image instanceof Blob)) {
       console.error("Invalid file received:", image);
@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     }
 
     // Convert the Blob to a Buffer
-    const buffer = Buffer.from(await image.arrayBuffer());
+    const arrayBuffer = await image.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     const key = `templates/${Date.now()}-${image.name}`; // Generate a unique key
 
     // Upload the file to S3

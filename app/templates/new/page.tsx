@@ -18,34 +18,28 @@ export default function TemplatesPageNew() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+  
     if (!file.type.startsWith("image/")) {
       alert("Please upload a valid image file.");
       return;
     }
-
-    if (!file.type.startsWith("image/")) {
-        alert("Please upload a valid image file.");
-        return;
-      }
+  
     if (file.size > 5 * 1024 * 1024) { // Limit to 5MB
-        alert("File size must be less than 5MB.");
-        return;
+      alert("File size must be less than 5MB.");
+      return;
     }
-      
-
+  
     setUploading(true);
-
-    // Create FormData to upload the image
+  
     const formData = new FormData();
     formData.append("image", file);
-
+  
     try {
       const response = await fetch("/api/upload-image", {
         method: "POST",
         body: formData,
       });
-
+  
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Failed to upload image:", errorText);
@@ -53,8 +47,8 @@ export default function TemplatesPageNew() {
         setUploading(false);
         return;
       }
-
-      const { imageUrl } = await response.json(); // Assuming the API returns the image URL
+  
+      const { imageUrl } = await response.json();
       setTemplate((prev) => ({
         ...prev,
         imageUrl, // Set the uploaded image URL
@@ -67,6 +61,9 @@ export default function TemplatesPageNew() {
       setUploading(false);
     }
   };
+  
+      
+
 
   const handleAddPlaceholder = () => {
     const name = prompt("Enter placeholder name:");
