@@ -125,7 +125,7 @@ export default function TemplatesPageNew() {
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gray-100 flex flex-col">
         <Navbar />
-        <main className="flex-grow w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <main className="flex-grow max-w-7xl w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="container mx-auto">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
               <h1 className="text-2xl font-semibold text-gray-900 mb-4 md:mb-0">
