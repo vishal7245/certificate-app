@@ -1,15 +1,15 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function ResetPasswordPage() {
+// Move the component that uses `useSearchParams` inside Suspense
+function ResetPasswordForm() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const token = searchParams.get('token');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +39,9 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl text-black font-bold mb-6 text-center">Reset Password</h2>
+        <h2 className="text-2xl text-black font-bold mb-6 text-center">
+          Reset Password
+        </h2>
         {message && <p className="text-center text-red-500">{message}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
@@ -61,5 +63,13 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
