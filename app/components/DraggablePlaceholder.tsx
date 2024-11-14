@@ -13,7 +13,7 @@ type Props = {
 export function DraggablePlaceholder({ placeholder, scale, onPositionChange }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [isDraggingTouch, setIsDraggingTouch] = useState(false);
-  const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
+  const initialTouchRef = useRef<{ x: number; y: number } | null>(null);
 
   const [{ isDragging }, drag] = useDrag({
     type: 'placeholder',
@@ -30,32 +30,42 @@ export function DraggablePlaceholder({ placeholder, scale, onPositionChange }: P
     
     if (element) {
       const rect = element.getBoundingClientRect();
-      setTouchOffset({
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top
-      });
-      setIsDraggingTouch(true);
+      const parentRect = element.parentElement?.getBoundingClientRect();
+      
+      if (parentRect) {
+        // Store the initial position difference
+        initialTouchRef.current = {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+        setIsDraggingTouch(true);
 
-      const handleTouchMove = (moveEvent: TouchEvent) => {
-        moveEvent.preventDefault();
-        const moveTouch = moveEvent.touches[0];
-        const parentRect = element.parentElement?.getBoundingClientRect();
-        
-        if (parentRect) {
-          const x = (moveTouch.clientX - parentRect.left - touchOffset.x) / scale;
-          const y = (moveTouch.clientY - parentRect.top - touchOffset.y) / scale;
-          onPositionChange(placeholder.id, { x, y });
-        }
-      };
+        const handleTouchMove = (moveEvent: TouchEvent) => {
+          moveEvent.preventDefault();
+          const moveTouch = moveEvent.touches[0];
+          
+          if (initialTouchRef.current) {
+            // Calculate new position considering the initial touch offset
+            const newX = (moveTouch.clientX - parentRect.left - initialTouchRef.current.x) / scale;
+            const newY = (moveTouch.clientY - parentRect.top - initialTouchRef.current.y) / scale;
+            
+            onPositionChange(placeholder.id, { 
+              x: newX + (initialTouchRef.current.x / scale),
+              y: newY + (initialTouchRef.current.y / scale)
+            });
+          }
+        };
 
-      const handleTouchEnd = () => {
-        setIsDraggingTouch(false);
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-      };
+        const handleTouchEnd = () => {
+          setIsDraggingTouch(false);
+          initialTouchRef.current = null;
+          document.removeEventListener('touchmove', handleTouchMove);
+          document.removeEventListener('touchend', handleTouchEnd);
+        };
 
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+      }
     }
   };
 

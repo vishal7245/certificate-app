@@ -37,7 +37,7 @@ export default function LoginPage() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded mt-1"
+              className="w-full p-2 border text-gray-600 border-gray-300 rounded mt-1"
               required
             />
           </div>
