@@ -24,6 +24,16 @@ export default function TemplatesPageNew() {
       return;
     }
 
+    if (!file.type.startsWith("image/")) {
+        alert("Please upload a valid image file.");
+        return;
+      }
+    if (file.size > 5 * 1024 * 1024) { // Limit to 5MB
+        alert("File size must be less than 5MB.");
+        return;
+    }
+      
+
     setUploading(true);
 
     // Create FormData to upload the image

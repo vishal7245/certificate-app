@@ -1,4 +1,3 @@
-// TemplateCanvas.jsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -41,19 +40,21 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
     }
   };
 
-  // Set canvas size to match scaled image size
   useEffect(() => {
     if (imageUrl) {
       const img = new window.Image();
       img.src = imageUrl;
       img.onload = () => {
-        const viewportWidth = window.innerWidth * 0.9;
-        const viewportHeight = window.innerHeight * 0.8;
+        const viewportWidth = window.innerWidth * 0.9; // Maximum viewport width for scaling
+        const viewportHeight = window.innerHeight * 0.8; // Maximum viewport height for scaling
         const widthScale = viewportWidth / img.width;
         const heightScale = viewportHeight / img.height;
-        const newScale = Math.min(widthScale, heightScale, 1);
+        const newScale = Math.min(widthScale, heightScale, 1); // Ensure image fits in viewport
 
-        setCanvasSize({ width: img.width * newScale, height: img.height * newScale });
+        setCanvasSize({
+          width: img.width * newScale,
+          height: img.height * newScale,
+        });
         setScale(newScale);
       };
     }
@@ -71,7 +72,7 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
         overflow: 'hidden',
       }}
     >
-      {imageUrl && (
+      {imageUrl ? (
         <img
           src={imageUrl}
           alt="Certificate template"
@@ -82,15 +83,27 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
             pointerEvents: 'none',
           }}
         />
+      ) : (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: '#aaa',
+            fontSize: '18px',
+          }}
+        >
+          No template image uploaded
+        </div>
       )}
       {placeholders.map((placeholder) => (
         <DraggablePlaceholder
           key={placeholder.id}
           placeholder={placeholder}
           scale={scale} // Pass scale to placeholder
-          onPositionChange={(id, position) => {
-            onPlaceholderMove(id, position);
-          }}
+          onPositionChange={(id, position) => onPlaceholderMove(id, position)}
         />
       ))}
     </div>
