@@ -1,3 +1,4 @@
+// DraggablePlaceholder component
 'use client';
 
 import { useDrag } from 'react-dnd';

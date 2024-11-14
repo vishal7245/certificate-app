@@ -1,6 +1,8 @@
+// generate/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Template } from '../types';
 import { Navbar } from '../components/Navbar';
 
@@ -8,25 +10,44 @@ export default function GeneratePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
-  // Fetch templates when the component mounts
+  // Check if the user is authenticated
   useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const response = await fetch('/api/templates'); // Update the endpoint as per your API route
-        if (!response.ok) {
-          throw new Error('Failed to fetch templates');
+    fetch('/api/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) {
+          router.push('/login');
+        } else {
+          setUser(data);
         }
-        const data: Template[] = await response.json();
-        setTemplates(data);
-      } catch (error) {
-        console.error('Error fetching templates:', error);
-        alert('Failed to load templates');
-      }
-    };
-
-    fetchTemplates();
+      });
   }, []);
+
+  // Fetch templates when the user is authenticated
+  useEffect(() => {
+    if (user) {
+      const fetchTemplates = async () => {
+        try {
+          const response = await fetch('/api/templates');
+          if (!response.ok) {
+            throw new Error('Failed to fetch templates');
+          }
+          const data: Template[] = await response.json();
+          setTemplates(data);
+        } catch (error) {
+          console.error('Error fetching templates:', error);
+          alert('Failed to load templates');
+        }
+      };
+
+      fetchTemplates();
+    }
+  }, [user]);
+
+  if (!user) return null; // or a loading indicator
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,8 +58,8 @@ export default function GeneratePage() {
 
   const handleGenerate = async () => {
     try {
-      const formData = new FormData();
       if (csvFile && selectedTemplate) {
+        const formData = new FormData();
         formData.append('csv', csvFile);
         formData.append('templateId', selectedTemplate.id);
 
