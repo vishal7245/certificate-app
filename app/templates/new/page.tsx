@@ -125,26 +125,28 @@ export default function TemplatesPageNew() {
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gray-100 flex flex-col">
         <Navbar />
-        <main className="max-w-7xl w-full mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900">Create Template</h1>
-              <div className="space-x-4">
+        <main className="flex-grow w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900 mb-4 md:mb-0">
+                Create Template
+              </h1>
+              <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4">
                 <button
                   onClick={handleAddPlaceholder}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full md:w-auto"
                 >
                   Add Placeholder
                 </button>
                 <button
                   onClick={handleSave}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full md:w-auto"
                 >
                   Save Template
                 </button>
                 <button
                   onClick={() => router.push("/templates")}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 w-full md:w-auto"
                 >
                   Cancel
                 </button>
@@ -160,21 +162,23 @@ export default function TemplatesPageNew() {
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="mt-1 block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-50 file:text-blue-700
-                        hover:file:bg-blue-100"
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
               />
               {uploading && <p className="text-blue-500 mt-2">Uploading...</p>}
             </div>
 
             <div className="flex justify-center">
-              <TemplateCanvas
-                imageUrl={template.imageUrl}
-                placeholders={template.placeholders || []}
-                onPlaceholderMove={handlePlaceholderMove}
-              />
+              <div className="w-full md:w-auto">
+                <TemplateCanvas
+                  imageUrl={template.imageUrl}
+                  placeholders={template.placeholders || []}
+                  onPlaceholderMove={handlePlaceholderMove}
+                />
+              </div>
             </div>
           </div>
         </main>
