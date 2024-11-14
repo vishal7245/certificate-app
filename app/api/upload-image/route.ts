@@ -1,3 +1,7 @@
+// /api/upload-image/route.ts
+
+export const runtime = 'nodejs';
+
 import { NextResponse } from "next/server";
 import { uploadToS3 } from "@/app/lib/s3";
 
@@ -16,9 +20,13 @@ function isFileLike(value: any): value is FileLike {
 
 export async function POST(request: Request) {
   try {
+    console.log("Received request to /api/upload-image");
+
     // Parse the form data from the request
     const formData = await request.formData();
+    console.log("Form data parsed");
     const image = formData.get("image");
+    console.log("Image retrieved from form data:", image);
 
     if (!image) {
       console.error("No file received:", image);
@@ -31,12 +39,18 @@ export async function POST(request: Request) {
     }
 
     // Convert the Blob to a Buffer
+    console.log("Converting image to arrayBuffer");
     const arrayBuffer = await image.arrayBuffer();
+    console.log("ArrayBuffer obtained");
     const buffer = Buffer.from(arrayBuffer);
-    const key = `templates/${Date.now()}-${image.name || "image"}`; // Use a default name if not available
+    console.log("Buffer created from ArrayBuffer");
+    const key = `templates/${Date.now()}-${image.name || "image"}`;
+    console.log("Key for S3 upload:", key);
 
     // Upload the file to S3
+    console.log("Uploading to S3");
     const imageUrl = await uploadToS3(buffer, key);
+    console.log("Image uploaded to S3, URL:", imageUrl);
 
     // Return the URL of the uploaded file
     return NextResponse.json({ imageUrl });
