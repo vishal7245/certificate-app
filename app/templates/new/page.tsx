@@ -1,37 +1,65 @@
 "use client";
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { TemplateCanvas } from '@/app/components/TemplateCanvas';
-import { Navbar } from '@/app/components/Navbar';
-import { Template, Placeholder } from '@/app/types';
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { TemplateCanvas } from "@/app/components/TemplateCanvas";
+import { Navbar } from "@/app/components/Navbar";
+import { Template, Placeholder } from "@/app/types";
 
 export default function TemplatesPageNew() {
   const router = useRouter();
   const [template, setTemplate] = useState<Partial<Template>>({
-    name: '',
+    name: "",
     placeholders: [],
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false); // For upload state feedback
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTemplate((prev) => ({
-          ...prev,
-          imageUrl: reader.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload a valid image file.");
+      return;
+    }
+
+    setUploading(true);
+
+    // Create FormData to upload the image
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/api/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to upload image:", errorText);
+        alert("Failed to upload image");
+        setUploading(false);
+        return;
+      }
+
+      const { imageUrl } = await response.json(); // Assuming the API returns the image URL
+      setTemplate((prev) => ({
+        ...prev,
+        imageUrl, // Set the uploaded image URL
+      }));
+      alert("Image uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Error uploading image");
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleAddPlaceholder = () => {
-    const name = prompt('Enter placeholder name:');
+    const name = prompt("Enter placeholder name:");
     if (name) {
       const newPlaceholder: Placeholder = {
         id: Math.random().toString(),
@@ -56,41 +84,31 @@ export default function TemplatesPageNew() {
 
   const handleSave = async () => {
     try {
-      // Ensure template name is set
       let name: string | null | undefined = template.name;
       if (!name) {
-        name = prompt('Enter template name:');
-        if (!name) return; // Exit if user clicks "Cancel" or leaves it blank
+        name = prompt("Enter template name:");
+        if (!name) return; // Exit if user cancels or leaves it blank
       }
-  
-      // Update the template data locally with the new name
+
       const templateData = { ...template, name };
-  
-      // Log template and image data for debugging
-      console.log('Template data:', templateData);
-      console.log('Image file:', imageFile);
-  
-      const formData = new FormData();
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
-      formData.append('template', JSON.stringify(templateData));
-  
-      const response = await fetch('/api/templates', {
-        method: 'POST',
-        body: formData,
+
+      const response = await fetch("/api/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(templateData),
       });
-  
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Failed to save template:', errorText);
+        console.error("Failed to save template:", errorText);
         throw new Error(`Failed to save template: ${errorText}`);
       }
-  
-      alert('Template saved successfully!');
+
+      alert("Template saved successfully!");
+      router.push("/templates");
     } catch (error) {
-      console.error('Error saving template:', error);
-      alert('Failed to save template');
+      console.error("Error saving template:", error);
+      alert("Failed to save template");
     }
   };
 
@@ -116,11 +134,11 @@ export default function TemplatesPageNew() {
                   Save Template
                 </button>
                 <button
-                    onClick={() => router.push('/templates')}
-                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                    >
-                    Cancel
-                    </button>
+                  onClick={() => router.push("/templates")}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
 
@@ -139,6 +157,7 @@ export default function TemplatesPageNew() {
                         file:bg-blue-50 file:text-blue-700
                         hover:file:bg-blue-100"
               />
+              {uploading && <p className="text-blue-500 mt-2">Uploading...</p>}
             </div>
 
             <div className="flex justify-center">
