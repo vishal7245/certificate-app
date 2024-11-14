@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import prisma from "@/app/lib/db";
-import { uploadToS3 } from "@/app/lib/s3";
-import jwt from "jsonwebtoken";
+import { NextResponse } from 'next/server';
+import prisma from '@/app/lib/db';
+import { uploadToS3 } from '@/app/lib/s3';
+import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -21,6 +21,20 @@ function getUserIdFromRequest(request: Request): string | null {
   }
 }
 
+export async function GET(request: Request) {
+  const userId = getUserIdFromRequest(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const templates = await prisma.template.findMany({
+    where: { creatorId: userId },
+    select: { id: true, name: true, imageUrl: true, placeholders: true },
+  });
+
+  return NextResponse.json(templates);
+}
+
 export async function POST(request: Request) {
   const userId = getUserIdFromRequest(request);
   if (!userId) {
@@ -35,12 +49,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid image file" }, { status: 400 });
     }
 
-    // Convert File to Buffer
+    // Convert Blob to Buffer
     const buffer = Buffer.from(await image.arrayBuffer());
-    const key = `templates/${Date.now()}-${image.name}`;
+    const key = `templates/${Date.now()}-${(image as File).name}`;
     const imageUrl = await uploadToS3(buffer, key);
 
-    
     const templateData = JSON.parse(formData.get("template") as string);
 
     const template = await prisma.template.create({
