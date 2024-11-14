@@ -11,22 +11,11 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME!;
 
-
 export async function uploadToS3(
-  file: Buffer | File,
-  key: string
+  buffer: Buffer,
+  key: string,
+  contentType: string = "application/octet-stream"
 ): Promise<string> {
-  let buffer: Buffer;
-  let contentType = "application/octet-stream"; // Default content type
-
-  // Handle file type
-  if (file instanceof File) {
-    buffer = Buffer.from(await file.arrayBuffer());
-    contentType = file.type || "application/octet-stream";
-  } else {
-    buffer = file;
-  }
-
   // Upload the file to S3
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,

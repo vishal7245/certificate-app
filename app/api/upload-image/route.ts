@@ -44,12 +44,13 @@ export async function POST(request: Request) {
     console.log("ArrayBuffer obtained");
     const buffer = Buffer.from(arrayBuffer);
     console.log("Buffer created from ArrayBuffer");
+    const contentType = image.type || "application/octet-stream"; // Get the content type
     const key = `templates/${Date.now()}-${image.name || "image"}`;
     console.log("Key for S3 upload:", key);
 
     // Upload the file to S3
     console.log("Uploading to S3");
-    const imageUrl = await uploadToS3(buffer, key);
+    const imageUrl = await uploadToS3(buffer, key, contentType);
     console.log("Image uploaded to S3, URL:", imageUrl);
 
     // Return the URL of the uploaded file
