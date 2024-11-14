@@ -17,12 +17,11 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
     height: 0,
   });
   const [scale, setScale] = useState(1);
-
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   const [, drop] = useDrop({
     accept: 'placeholder',
-    drop: (item: Placeholder, monitor) => {
+    drop: (item: { id: string }, monitor) => {
       const clientOffset = monitor.getClientOffset();
       const canvasRect = canvasRef.current?.getBoundingClientRect();
       if (clientOffset && canvasRect) {
@@ -33,23 +32,16 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
     },
   });
 
-  const setDropRef = (element: HTMLDivElement | null) => {
-    if (element) {
-      drop(element);
-      canvasRef.current = element;
-    }
-  };
-
   useEffect(() => {
     if (imageUrl) {
       const img = new window.Image();
       img.src = imageUrl;
       img.onload = () => {
-        const viewportWidth = window.innerWidth * 0.9; // Maximum viewport width for scaling
-        const viewportHeight = window.innerHeight * 0.8; // Maximum viewport height for scaling
+        const viewportWidth = window.innerWidth * 0.9;
+        const viewportHeight = window.innerHeight * 0.8;
         const widthScale = viewportWidth / img.width;
         const heightScale = viewportHeight / img.height;
-        const newScale = Math.min(widthScale, heightScale, 1); // Ensure image fits in viewport
+        const newScale = Math.min(widthScale, heightScale, 1);
 
         setCanvasSize({
           width: img.width * newScale,
@@ -59,6 +51,13 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
       };
     }
   }, [imageUrl]);
+
+  const setDropRef = (element: HTMLDivElement | null) => {
+    if (element) {
+      drop(element);
+      canvasRef.current = element;
+    }
+  };
 
   return (
     <div
@@ -70,6 +69,7 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
         border: '1px solid #ddd',
         backgroundColor: '#f9fafb',
         overflow: 'hidden',
+        touchAction: 'none',
       }}
     >
       {imageUrl ? (
@@ -102,8 +102,8 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
         <DraggablePlaceholder
           key={placeholder.id}
           placeholder={placeholder}
-          scale={scale} // Pass scale to placeholder
-          onPositionChange={(id, position) => onPlaceholderMove(id, position)}
+          scale={scale}
+          onPositionChange={onPlaceholderMove}
         />
       ))}
     </div>
