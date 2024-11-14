@@ -43,24 +43,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const formData = await request.formData();
-    const image = formData.get("image");
-
-    if (!image || !(image instanceof File)) {
-      return NextResponse.json({ error: "Invalid image file" }, { status: 400 });
-    }
-
-    // Convert Blob to Buffer
-    const buffer = Buffer.from(await image.arrayBuffer());
-    const key = `templates/${Date.now()}-${(image as File).name}`;
-    const imageUrl = await uploadToS3(buffer, key);
-
-    const templateData = JSON.parse(formData.get("template") as string);
+    const templateData = await request.json();
 
     const template = await prisma.template.create({
       data: {
         name: templateData.name || "Untitled Template",
-        imageUrl,
+        imageUrl: templateData.imageUrl,
         placeholders: templateData.placeholders,
         creatorId: userId,
       },
