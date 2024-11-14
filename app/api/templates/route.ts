@@ -1,3 +1,4 @@
+// api/templates/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import { uploadToS3 } from '@/app/lib/s3';

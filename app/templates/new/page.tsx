@@ -1,3 +1,4 @@
+// temlates/new/page.tsx
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,7 +25,7 @@ export default function TemplatesPageNew() {
       return;
     }
   
-    if (file.size > 5 * 1024 * 1024) { // Limit to 5MB
+    if (file.size > 5 * 1024 * 1024) {
       alert("File size must be less than 5MB.");
       return;
     }
@@ -51,7 +52,7 @@ export default function TemplatesPageNew() {
       const { imageUrl } = await response.json();
       setTemplate((prev) => ({
         ...prev,
-        imageUrl, // Set the uploaded image URL
+        imageUrl,
       }));
       alert("Image uploaded successfully!");
     } catch (error) {
@@ -61,6 +62,7 @@ export default function TemplatesPageNew() {
       setUploading(false);
     }
   };
+  
   
       
 
