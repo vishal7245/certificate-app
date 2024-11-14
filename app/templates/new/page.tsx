@@ -54,7 +54,6 @@ export default function TemplatesPageNew() {
         ...prev,
         imageUrl,
       }));
-      alert("Image uploaded successfully!");
     } catch (error) {
       console.error("Error uploading image:", error);
       alert("Error uploading image");

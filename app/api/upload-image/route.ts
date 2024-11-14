@@ -1,6 +1,18 @@
-// api/upload-image/route.ts
 import { NextResponse } from "next/server";
 import { uploadToS3 } from "@/app/lib/s3";
+
+interface FileLike {
+  arrayBuffer: () => Promise<ArrayBuffer>;
+  name?: string;
+}
+
+function isFileLike(value: any): value is FileLike {
+  return (
+    value &&
+    typeof value.arrayBuffer === "function" &&
+    (typeof value.name === "string" || typeof value.name === "undefined")
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -8,15 +20,20 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const image = formData.get("image");
 
-    if (!(image instanceof File)) {
+    if (!image) {
+      console.error("No file received:", image);
+      return NextResponse.json({ error: "No file received" }, { status: 400 });
+    }
+
+    if (!isFileLike(image)) {
       console.error("Invalid file received:", image);
-      return NextResponse.json({ error: "Invalid file" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
     // Convert the Blob to a Buffer
     const arrayBuffer = await image.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const key = `templates/${Date.now()}-${(image as any).name || "image"}`; // Use a default name if not available
+    const key = `templates/${Date.now()}-${image.name || "image"}`; // Use a default name if not available
 
     // Upload the file to S3
     const imageUrl = await uploadToS3(buffer, key);
@@ -31,5 +48,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unknown error" }, { status: 500 });
   }
 }
-
-  
