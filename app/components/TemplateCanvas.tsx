@@ -3,22 +3,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { DraggablePlaceholder } from './DraggablePlaceholder';
-import { Placeholder } from '@/app/types';
+import { ResizableDraggableSignature } from './DraggableSignature';
+import { Placeholder, Signature } from '@/app/types';
 
 type Props = {
   imageUrl?: string;
   placeholders: Placeholder[];
+  signatures: Signature[];
   onPlaceholderMove: (id: string, position: { x: number; y: number }) => void;
+  onSignatureMove: (id: string, position: { x: number; y: number }) => void;
+  onSignatureResize: (id: string, style: { Width: number; Height: number }) => void;
   onPlaceholderSelect?: (id: string | null) => void;
+  onSignatureSelect?: (id: string | null) => void;
   selectedPlaceholderId?: string | null;
+  selectedSignatureId?: string | null;
 };
 
-export function TemplateCanvas({ 
-  imageUrl, 
-  placeholders, 
+export function TemplateCanvas({
+  imageUrl,
+  placeholders,
+  signatures,
   onPlaceholderMove,
+  onSignatureMove,
+  onSignatureResize,
   onPlaceholderSelect,
-  selectedPlaceholderId 
+  onSignatureSelect,
+  selectedPlaceholderId,
+  selectedSignatureId,
 }: Props) {
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({
     width: 0,
@@ -27,7 +38,7 @@ export function TemplateCanvas({
   const [scale, setScale] = useState(1);
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
-  const [, drop] = useDrop({
+  const [, dropPlaceholder] = useDrop({
     accept: 'placeholder',
     drop: (item: { id: string }, monitor) => {
       const clientOffset = monitor.getClientOffset();
@@ -36,6 +47,19 @@ export function TemplateCanvas({
         const x = (clientOffset.x - canvasRect.left) / scale;
         const y = (clientOffset.y - canvasRect.top) / scale;
         onPlaceholderMove(item.id, { x, y });
+      }
+    },
+  });
+
+  const [, dropSignature] = useDrop({
+    accept: 'signature',
+    drop: (item: { id: string }, monitor) => {
+      const clientOffset = monitor.getClientOffset();
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      if (clientOffset && canvasRect) {
+        const x = (clientOffset.x - canvasRect.left) / scale;
+        const y = (clientOffset.y - canvasRect.top) / scale;
+        onSignatureMove(item.id, { x, y });
       }
     },
   });
@@ -62,15 +86,16 @@ export function TemplateCanvas({
 
   const setDropRef = (element: HTMLDivElement | null) => {
     if (element) {
-      drop(element);
+      dropPlaceholder(element);
+      dropSignature(element);
       canvasRef.current = element;
     }
   };
 
-  // Handle canvas click to deselect
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && onPlaceholderSelect) {
-      onPlaceholderSelect(null);
+    if (e.target === e.currentTarget) {
+      if (onPlaceholderSelect) onPlaceholderSelect(null);
+      if (onSignatureSelect) onSignatureSelect(null);
     }
   };
 
@@ -122,6 +147,17 @@ export function TemplateCanvas({
           onPositionChange={onPlaceholderMove}
           onSelect={onPlaceholderSelect ? () => onPlaceholderSelect(placeholder.id) : undefined}
           isSelected={selectedPlaceholderId === placeholder.id}
+        />
+      ))}
+      {signatures.map((signature) => (
+        <ResizableDraggableSignature
+          key={signature.id}
+          signature={signature}
+          scale={scale}
+          onPositionChange={onSignatureMove}
+          onResize={onSignatureResize}
+          onSelect={onSignatureSelect ? () => onSignatureSelect(signature.id) : undefined}
+          isSelected={selectedSignatureId === signature.id}
         />
       ))}
     </div>

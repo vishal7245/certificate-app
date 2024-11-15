@@ -7,10 +7,11 @@ import { TemplateCanvas } from "@/app/components/TemplateCanvas";
 import { Navbar } from "@/app/components/Navbar";
 import { PlaceholderEditor } from "@/app/components/PlaceholderEditor";
 import { AddPlaceholderModal } from "@/app/components/AddPlaceholderModal";
-import { Template, Placeholder, PlaceholderStyle } from "@/app/types";
+import { Template, Placeholder, PlaceholderStyle, Signature } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AddSignatureModal } from "@/app/components/AddSignatureModal";
 
 export default function TemplatesPageNew() {
   const router = useRouter();
@@ -21,10 +22,30 @@ export default function TemplatesPageNew() {
   const [uploading, setUploading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPlaceholder, setSelectedPlaceholder] = useState<string | null>(null);
-
+  const [selectedSignature, setSelectedSignature] = useState<string | null>(null);
+  const [isAddSignatureModalOpen, setIsAddSignatureModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-
+  const handleAddSignature = (name: string, width: number, height: number, imageUrl?: string) => {
+    if (!template.imageUrl) {
+      alert("Please upload an image before adding signatures");
+      return;
+    }
+  
+    const newSignature: Signature = {
+      id: Math.random().toString(),
+      name,
+      position: { x: 50, y: 50 },
+      style: { Width: width, Height: height },
+      imageUrl: imageUrl || "", // Ensure imageUrl is a string
+    };
+  
+    setTemplate((prev) => ({
+      ...prev,
+      signatures: [...(prev.signatures || []), newSignature],
+    }));
+  };
+  
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,6 +189,13 @@ export default function TemplatesPageNew() {
                 >
                   Add Placeholder
                 </Button>
+                <Button
+                  onClick={() => setIsAddSignatureModalOpen(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={!template.imageUrl}
+                >
+                  Add Signature
+                </Button>
                 <Button onClick={handleSave} variant="default" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                   Save Template
                 </Button>
@@ -208,13 +236,51 @@ export default function TemplatesPageNew() {
 
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="flex-1">
-                <TemplateCanvas
-                  imageUrl={template.imageUrl}
-                  placeholders={template.placeholders || []}
-                  onPlaceholderMove={handlePlaceholderMove}
-                  onPlaceholderSelect={setSelectedPlaceholder}
-                  selectedPlaceholderId={selectedPlaceholder}
-                />
+              <TemplateCanvas
+                imageUrl={template.imageUrl}
+                placeholders={template.placeholders || []}
+                signatures={template.signatures || []} // Include signatures
+                onPlaceholderMove={(id, position) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    placeholders: (prev.placeholders || []).map((placeholder) =>
+                      placeholder.id === id ? { ...placeholder, position } : placeholder
+                    ),
+                  }));
+                }}
+                onSignatureMove={(id, position) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    signatures: (prev.signatures || []).map((signature) =>
+                      signature.id === id ? { ...signature, position } : signature
+                    ),
+                  }));
+                }}
+                onSignatureResize={(id, style) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    signatures: (prev.signatures || []).map((signature) =>
+                      signature.id === id ? { ...signature, style: { ...signature.style, ...style } } : signature
+                    ),
+                  }));
+                }}
+                onPlaceholderSelect={(id) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    selectedPlaceholderId: id,
+                  }));
+                }}
+                onSignatureSelect={(id) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    selectedSignatureId: id,
+                  }));
+                }}
+                selectedPlaceholderId={selectedPlaceholder}
+                selectedSignatureId={selectedSignature}
+              />
+
+
               </div>
 
               <div className="w-full lg:w-80 mt-6 lg:mt-0">
@@ -238,6 +304,11 @@ export default function TemplatesPageNew() {
           open={isAddModalOpen}
           onOpenChange={setIsAddModalOpen}
           onAdd={handleAddPlaceholder}
+        />
+        <AddSignatureModal
+          open={isAddSignatureModalOpen}
+          onOpenChange={setIsAddSignatureModalOpen}
+          onAdd={handleAddSignature}
         />
       </div>
     </DndProvider>

@@ -124,7 +124,7 @@ export function DraggablePlaceholder({
       onTouchStart={handleTouchStart}
       onClick={handleClick}
       className={`bg-white border ${isSelected ? 'border-blue-500 border-2' : 'border-black'} 
-                 text-black rounded px-4 py-2 text-2xl shadow-sm
+                 text-black rounded px-1 text-2xl shadow-sm
                  ${isSelected ? 'ring-2 ring-blue-300' : ''}`}
     >
       {placeholder.name}
