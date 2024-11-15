@@ -73,6 +73,11 @@ export default function TemplatesPageNew() {
   };
 
   const handleAddPlaceholder = (name: string, style: PlaceholderStyle) => {
+    if (!template.imageUrl) {
+      alert("Please upload an image before adding placeholders");
+      return;
+    }
+    
     const newPlaceholder: Placeholder = {
       id: Math.random().toString(),
       name,
@@ -156,7 +161,11 @@ export default function TemplatesPageNew() {
                 Create Template
               </h1>
               <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
-                <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={!template.imageUrl}
+                >
                   Add Placeholder
                 </Button>
                 <Button onClick={handleSave} variant="default" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">

@@ -3,15 +3,22 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Template } from '../types';
-import { Navbar } from '../components/Navbar';
+import { Template } from '@/app/types';
+import { Navbar } from '@/app/components/Navbar';
+import { FeedbackDialog } from '@/app/components/FeedbackDialog';
+
+
 
 export default function GeneratePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState<string | null>(null); // To store dialog message
   const router = useRouter();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
 
   // Check if the user is authenticated
   useEffect(() => {
@@ -39,7 +46,7 @@ export default function GeneratePage() {
           setTemplates(data);
         } catch (error) {
           console.error('Error fetching templates:', error);
-          alert('Failed to load templates');
+          setDialogMessage('Failed to load templates.');
         }
       };
 
@@ -47,7 +54,7 @@ export default function GeneratePage() {
     }
   }, [user]);
 
-  if (!user) return null; // or a loading indicator
+  if (!user) return null;
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,24 +66,29 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     try {
       if (csvFile && selectedTemplate) {
+        setIsLoading(true);
         const formData = new FormData();
         formData.append('csv', csvFile);
         formData.append('templateId', selectedTemplate.id);
-
+  
         const response = await fetch('/api/generate-certificates', {
           method: 'POST',
           body: formData,
         });
-
+  
         if (!response.ok) {
           throw new Error('Failed to generate certificates');
         }
-
-        alert('Certificates generated successfully!');
+  
+        setDialogMessage('Certificates generated successfully!');
+        setIsDialogOpen(true); // Open the dialog
       }
     } catch (error) {
       console.error('Error generating certificates:', error);
-      alert('Failed to generate certificates');
+      setDialogMessage('Failed to generate certificates.');
+      setIsDialogOpen(true); // Open the dialog on error too
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -133,13 +145,27 @@ export default function GeneratePage() {
             <button
               onClick={handleGenerate}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              disabled={!selectedTemplate || !csvFile}
+              disabled={!selectedTemplate || !csvFile || isLoading}
             >
-              Generate Certificates
+              {isLoading ? 'Generating...' : 'Generate Certificates'}
             </button>
           </div>
         </div>
+        {isLoading && (
+          <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center">
+            <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-white" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Dialog for feedback messages */}
+      <FeedbackDialog 
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        message={dialogMessage}
+      />
     </div>
   );
 }
