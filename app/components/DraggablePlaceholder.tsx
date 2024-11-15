@@ -8,9 +8,17 @@ type Props = {
   placeholder: Placeholder;
   scale: number;
   onPositionChange: (id: string, position: { x: number; y: number }) => void;
+  onSelect?: () => void;
+  isSelected?: boolean;
 };
 
-export function DraggablePlaceholder({ placeholder, scale, onPositionChange }: Props) {
+export function DraggablePlaceholder({ 
+  placeholder, 
+  scale, 
+  onPositionChange, 
+  onSelect,
+  isSelected 
+}: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [isDraggingTouch, setIsDraggingTouch] = useState(false);
   const initialTouchRef = useRef<{ x: number; y: number } | null>(null);
@@ -56,17 +64,35 @@ export function DraggablePlaceholder({ placeholder, scale, onPositionChange }: P
           }
         };
 
-        const handleTouchEnd = () => {
+        const handleTouchEnd = (endEvent: TouchEvent) => {
           setIsDraggingTouch(false);
           initialTouchRef.current = null;
           document.removeEventListener('touchmove', handleTouchMove);
           document.removeEventListener('touchend', handleTouchEnd);
+
+          // Only trigger select if it was a tap (no significant movement)
+          if (endEvent.changedTouches[0]) {
+            const endTouch = endEvent.changedTouches[0];
+            const moveDistance = Math.sqrt(
+              Math.pow(endTouch.clientX - touch.clientX, 2) +
+              Math.pow(endTouch.clientY - touch.clientY, 2)
+            );
+            
+            if (moveDistance < 5 && onSelect) { // 5px threshold for tap
+              onSelect();
+            }
+          }
         };
 
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd);
       }
     }
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect?.();
   };
 
   drag(ref);
@@ -83,6 +109,12 @@ export function DraggablePlaceholder({ placeholder, scale, onPositionChange }: P
     WebkitUserSelect: 'none',
     userSelect: 'none',
     zIndex: isDragging || isDraggingTouch ? 1000 : 1,
+    fontFamily: placeholder.style.fontFamily,
+    // Only scale the display size in the editor
+    fontSize: `${placeholder.style.fontSize * scale}px`,
+    color: placeholder.style.fontColor,
+    fontWeight: placeholder.style.fontWeight,
+    textAlign: placeholder.style.textAlign,
   };
 
   return (
@@ -90,7 +122,10 @@ export function DraggablePlaceholder({ placeholder, scale, onPositionChange }: P
       ref={ref}
       style={style}
       onTouchStart={handleTouchStart}
-      className="bg-white border border-black text-black rounded px-4 py-2 text-2xl shadow-sm"
+      onClick={handleClick}
+      className={`bg-white border ${isSelected ? 'border-blue-500 border-2' : 'border-black'} 
+                 text-black rounded px-4 py-2 text-2xl shadow-sm
+                 ${isSelected ? 'ring-2 ring-blue-300' : ''}`}
     >
       {placeholder.name}
     </div>

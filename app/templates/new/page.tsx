@@ -1,5 +1,3 @@
-// temlates/new/page.tsx
-//test
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -7,7 +5,12 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TemplateCanvas } from "@/app/components/TemplateCanvas";
 import { Navbar } from "@/app/components/Navbar";
-import { Template, Placeholder } from "@/app/types";
+import { PlaceholderEditor } from "@/app/components/PlaceholderEditor";
+import { AddPlaceholderModal } from "@/app/components/AddPlaceholderModal";
+import { Template, Placeholder, PlaceholderStyle } from "@/app/types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export default function TemplatesPageNew() {
   const router = useRouter();
@@ -15,7 +18,13 @@ export default function TemplatesPageNew() {
     name: "",
     placeholders: [],
   });
-  const [uploading, setUploading] = useState(false); // For upload state feedback
+  const [uploading, setUploading] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedPlaceholder, setSelectedPlaceholder] = useState<string | null>(null);
+
+  const [saving, setSaving] = useState(false);
+
+
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,95 +71,112 @@ export default function TemplatesPageNew() {
       setUploading(false);
     }
   };
-  
-  
-      
 
-
-  const handleAddPlaceholder = () => {
-    const name = prompt("Enter placeholder name:");
-    if (name) {
-      const newPlaceholder: Placeholder = {
-        id: Math.random().toString(),
-        name,
-        position: { x: 50, y: 50 },
-      };
-      setTemplate((prev) => ({
-        ...prev,
-        placeholders: [...(prev.placeholders || []), newPlaceholder],
-      }));
-    }
+  const handleAddPlaceholder = (name: string, style: PlaceholderStyle) => {
+    const newPlaceholder: Placeholder = {
+      id: Math.random().toString(),
+      name,
+      position: { x: 50, y: 50 },
+      style
+    };
+    setTemplate((prev) => ({
+      ...prev,
+      placeholders: [...(prev.placeholders || []), newPlaceholder],
+    }));
+    setSelectedPlaceholder(newPlaceholder.id);
   };
 
-  const handlePlaceholderMove = (id: string, position: { x: number; y: number }) => {
+  const handlePlaceholderUpdate = (id: string, updates: Partial<Placeholder>) => {
     setTemplate((prev) => ({
       ...prev,
       placeholders: prev.placeholders?.map((p) =>
-        p.id === id ? { ...p, position } : p
+        p.id === id ? { ...p, ...updates } : p
       ),
     }));
   };
 
+  const handlePlaceholderDelete = (id: string) => {
+    setTemplate((prev) => ({
+      ...prev,
+      placeholders: prev.placeholders?.filter((p) => p.id !== id),
+    }));
+    setSelectedPlaceholder(null);
+  };
+
+  const handlePlaceholderMove = (id: string, position: { x: number; y: number }) => {
+    handlePlaceholderUpdate(id, { position });
+  };
+
   const handleSave = async () => {
+    if (!template.name || !template.imageUrl) {
+      alert("Please provide a template name and upload an image.");
+      return;
+    }
+  
+    setSaving(true); // Add a state to show loading if needed
     try {
-      let name: string | null | undefined = template.name;
-      if (!name) {
-        name = prompt("Enter template name:");
-        if (!name) return; // Exit if user cancels or leaves it blank
-      }
-
-      const templateData = { ...template, name };
-
       const response = await fetch("/api/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(templateData),
+        body: JSON.stringify(template),
       });
-
+  
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to save template:", errorText);
-        throw new Error(`Failed to save template: ${errorText}`);
+        // Extract detailed error message from the response
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData?.error || "An unknown error occurred";
+  
+        console.error("Failed to save template:", errorData);
+        throw new Error(errorMessage);
       }
-
+  
       alert("Template saved successfully!");
       router.push("/templates");
     } catch (error) {
       console.error("Error saving template:", error);
-      alert("Failed to save template");
+      alert(error instanceof Error ? error.message : "Failed to save template");
+    } finally {
+      setSaving(false);
     }
   };
+  
+
+  const selectedPlaceholderData = template.placeholders?.find(
+    (p) => p.id === selectedPlaceholder
+  );
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gray-100 flex flex-col">
         <Navbar />
-        <main className="flex-grow max-w-7xl w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <main className="flex-grow w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="container mx-auto">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-4 md:mb-0">
+            <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900">
                 Create Template
               </h1>
-              <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4">
-                <button
-                  onClick={handleAddPlaceholder}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full md:w-auto"
-                >
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+                <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                   Add Placeholder
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full md:w-auto"
-                >
+                </Button>
+                <Button onClick={handleSave} variant="default" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                   Save Template
-                </button>
-                <button
-                  onClick={() => router.push("/templates")}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 w-full md:w-auto"
-                >
+                </Button>
+                <Button onClick={() => router.push("/templates")} variant="outline" className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 hover:text-white">
                   Cancel
-                </button>
+                </Button>
               </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700">Template Name</label>
+              <Input
+                type="text"
+                value={template.name}
+                onChange={(e) => setTemplate((prev) => ({ ...prev, name: e.target.value }))}
+                className="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Enter template name"
+              />
             </div>
 
             <div className="mb-6">
@@ -171,18 +197,41 @@ export default function TemplatesPageNew() {
               {uploading && <p className="text-blue-500 mt-2">Uploading...</p>}
             </div>
 
-            <div className="flex justify-center">
-              <div className="w-full md:w-auto">
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex-1">
                 <TemplateCanvas
                   imageUrl={template.imageUrl}
                   placeholders={template.placeholders || []}
                   onPlaceholderMove={handlePlaceholderMove}
+                  onPlaceholderSelect={setSelectedPlaceholder}
+                  selectedPlaceholderId={selectedPlaceholder}
                 />
+              </div>
+
+              <div className="w-full lg:w-80 mt-6 lg:mt-0">
+                {selectedPlaceholderData ? (
+                  <PlaceholderEditor
+                    placeholder={selectedPlaceholderData}
+                    onUpdate={handlePlaceholderUpdate}
+                    onDelete={handlePlaceholderDelete}
+                  />
+                ) : (
+                  <Card className="p-4 text-center text-gray-500">
+                    Select a placeholder to edit its properties
+                  </Card>
+                )}
               </div>
             </div>
           </div>
         </main>
+
+        <AddPlaceholderModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          onAdd={handleAddPlaceholder}
+        />
       </div>
     </DndProvider>
   );
 }
+

@@ -4,11 +4,20 @@ export type Position = {
     y: number;
   };
   
-export type Placeholder = {
-  id: string;
-  name: string;
-  position: Position;
-};
+  export interface PlaceholderStyle {
+    fontFamily: string;
+    fontSize: number;
+    fontColor: string;
+    fontWeight: string;
+    textAlign: 'left' | 'center' | 'right';
+  }
+  
+  export interface Placeholder {
+    id: string;
+    name: string;
+    position: { x: number; y: number };
+    style: PlaceholderStyle;
+  }
   
 export type Template = {
   id: string;

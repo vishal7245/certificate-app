@@ -45,6 +45,11 @@ function getUserIdFromRequest(request: Request): string | null {
   }
 }
 
+function calculateCanvasFontSize(fontSize: number, templateWidth: number, canvasWidth: number): number {
+  const scaleFactor = canvasWidth / templateWidth;
+  return fontSize * scaleFactor;
+}
+
 export async function POST(request: Request) {
   const userId = getUserIdFromRequest(request);
   if (!userId) {
@@ -95,10 +100,29 @@ export async function POST(request: Request) {
       (template.placeholders as any[])?.forEach((placeholder: any) => {
         const value = record[placeholder.name];
         if (value) {
-          ctx.font = '30px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(value, placeholder.position.x, placeholder.position.y);
+          // Calculate the correct font size for the canvas
+          const canvasFontSize = calculateCanvasFontSize(
+            placeholder.style.fontSize,
+            template.width, // You'll need to store the template's original width
+            canvas.width
+          );
+          
+          // Set the font with the calculated size
+          ctx.font = `${placeholder.style.fontWeight} ${canvasFontSize}px ${placeholder.style.fontFamily}`;
+          ctx.fillStyle = placeholder.style.fontColor;
+          ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
+          
+          // Calculate text positioning based on alignment
+          let x = placeholder.position.x;
+          if (placeholder.style.textAlign === 'center') {
+            ctx.textAlign = 'center';
+          } else if (placeholder.style.textAlign === 'right') {
+            ctx.textAlign = 'right';
+          } else {
+            ctx.textAlign = 'left';
+          }
+          
+          ctx.fillText(value, x, placeholder.position.y);
         }
       });
 

@@ -9,9 +9,17 @@ type Props = {
   imageUrl?: string;
   placeholders: Placeholder[];
   onPlaceholderMove: (id: string, position: { x: number; y: number }) => void;
+  onPlaceholderSelect?: (id: string | null) => void;
+  selectedPlaceholderId?: string | null;
 };
 
-export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Props) {
+export function TemplateCanvas({ 
+  imageUrl, 
+  placeholders, 
+  onPlaceholderMove,
+  onPlaceholderSelect,
+  selectedPlaceholderId 
+}: Props) {
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({
     width: 0,
     height: 0,
@@ -59,9 +67,17 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
     }
   };
 
+  // Handle canvas click to deselect
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && onPlaceholderSelect) {
+      onPlaceholderSelect(null);
+    }
+  };
+
   return (
     <div
       ref={setDropRef}
+      onClick={handleCanvasClick}
       style={{
         position: 'relative',
         width: `${canvasSize.width}px`,
@@ -104,6 +120,8 @@ export function TemplateCanvas({ imageUrl, placeholders, onPlaceholderMove }: Pr
           placeholder={placeholder}
           scale={scale}
           onPositionChange={onPlaceholderMove}
+          onSelect={onPlaceholderSelect ? () => onPlaceholderSelect(placeholder.id) : undefined}
+          isSelected={selectedPlaceholderId === placeholder.id}
         />
       ))}
     </div>
