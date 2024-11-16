@@ -18,11 +18,12 @@ import { FeedbackDialog } from '@/app/components/FeedbackDialog';
 import { use } from 'react';
 
 interface EditTemplatePageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }
 
 
-export default function EditTemplatePage({ params }: { params: { id: string } }) {
+
+export default function EditTemplatePage({ params }: EditTemplatePageProps) {
   const { id } = useParams();
   const router = useRouter();
   const [template, setTemplate] = useState<Partial<Template>>({
@@ -390,3 +391,4 @@ export default function EditTemplatePage({ params }: { params: { id: string } })
     </DndProvider>
   );
 }
+
