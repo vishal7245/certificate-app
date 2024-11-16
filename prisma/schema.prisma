@@ -29,7 +29,7 @@ model Template {
   width        Int          // Added field for template width
   height       Int          // Added field for template height
   placeholders Json
-  signatures   Json          // Added field to store signatures
+  signatures   Json        // Added field to store signatures
   creatorId    String
   creator      User          @relation(fields: [creatorId], references: [id])
   certificates Certificate[]

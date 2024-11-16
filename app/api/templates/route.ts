@@ -1,10 +1,8 @@
-// api/templates/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import { uploadToS3 } from '@/app/lib/s3';
 import jwt from 'jsonwebtoken';
 import { createCanvas, loadImage } from 'canvas';
-
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -32,7 +30,13 @@ export async function GET(request: Request) {
 
   const templates = await prisma.template.findMany({
     where: { creatorId: userId },
-    select: { id: true, name: true, imageUrl: true, placeholders: true },
+    select: { 
+      id: true, 
+      name: true, 
+      imageUrl: true, 
+      placeholders: true,
+      signatures: true // Include signatures in the response
+    },
   });
 
   return NextResponse.json(templates);
@@ -69,6 +73,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate signatures array if present
+    if (body.signatures) {
+      if (!Array.isArray(body.signatures)) {
+        return NextResponse.json(
+          { error: "Signatures must be an array" },
+          { status: 400 }
+        );
+      }
+
+      for (const signature of body.signatures) {
+        if (!signature.name || !signature.position || !signature.style) {
+          return NextResponse.json(
+            { error: "Each signature must have name, position, and style properties" },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     const template = await prisma.template.create({
       data: {
         name: body.name,
@@ -76,6 +99,7 @@ export async function POST(request: Request) {
         width: image.width,
         height: image.height,
         placeholders: body.placeholders || [],
+        signatures: body.signatures || [], // Include signatures in template creation
         creatorId: userId!,
       },
     });

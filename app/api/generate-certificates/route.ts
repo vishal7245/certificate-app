@@ -1,6 +1,4 @@
-// /api/generate-certificates/route.ts
-
-export const runtime = 'nodejs'; // Specify Node.js runtime
+export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
@@ -93,26 +91,23 @@ export async function POST(request: Request) {
       const canvas = createCanvas(image.width, image.height);
       const ctx = canvas.getContext('2d');
 
-      // Draw the image onto the canvas
+      // Draw the template image
       ctx.drawImage(image, 0, 0);
 
       // Add placeholders
       (template.placeholders as any[])?.forEach((placeholder: any) => {
         const value = record[placeholder.name];
         if (value) {
-          // Calculate the correct font size for the canvas
           const canvasFontSize = calculateCanvasFontSize(
             placeholder.style.fontSize,
-            template.width, // You'll need to store the template's original width
+            template.width,
             canvas.width
           );
           
-          // Set the font with the calculated size
           ctx.font = `${placeholder.style.fontWeight} ${canvasFontSize}px ${placeholder.style.fontFamily}`;
           ctx.fillStyle = placeholder.style.fontColor;
           ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
           
-          // Calculate text positioning based on alignment
           let x = placeholder.position.x;
           if (placeholder.style.textAlign === 'center') {
             ctx.textAlign = 'center';
@@ -126,12 +121,48 @@ export async function POST(request: Request) {
         }
       });
 
-      // Convert the canvas to a buffer
+      // Add signatures
+      if (template.signatures) {
+        await Promise.all((template.signatures as any[]).map(async (signature: any) => {
+          if (signature.imageUrl) {
+            try {
+              const signatureImage = await loadImage(signature.imageUrl);
+              
+              // Calculate scale factors to maintain aspect ratio within bounds
+              const scaleWidth = signature.style.Width / signatureImage.width;
+              const scaleHeight = signature.style.Height / signatureImage.height;
+              const scale = Math.min(scaleWidth, scaleHeight);
+              
+              // Calculate scaled dimensions
+              const scaledWidth = signatureImage.width * scale;
+              const scaledHeight = signatureImage.height * scale;
+
+              // Adjust position to account for the offset
+              // Subtract half the width and height to move the top-left corner to the center point
+              const adjustedX = signature.position.x - (scaledWidth / 2);
+              const adjustedY = signature.position.y - (scaledHeight / 2);
+
+              // Draw the signature at the corrected position
+              ctx.drawImage(
+                signatureImage,
+                adjustedX,
+                adjustedY,
+                scaledWidth,
+                scaledHeight
+              );
+            } catch (error) {
+              console.error(`Failed to load signature image: ${signature.imageUrl}`, error);
+            }
+          }
+        }));
+      }
+
+      // Convert canvas to buffer and upload
       const buffer = canvas.toBuffer('image/png');
       const key = `certificates/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`;
       const certificateUrl = await uploadToS3(buffer, key);
 
-      // Save the certificate to the database
+      // Save certificate
       const certificate = await prisma.certificate.create({
         data: {
           templateId,
@@ -142,7 +173,7 @@ export async function POST(request: Request) {
         },
       });
 
-      // Send the certificate via email
+      // Send email
       const email = record['Email'];
       if (email) {
         try {
