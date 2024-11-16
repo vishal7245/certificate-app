@@ -12,6 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AddSignatureModal } from "@/app/components/AddSignatureModal";
+import TemplatePreviewModal from "@/app/components/TemplatePreviewModal";
+import { FeedbackDialog } from '@/app/components/FeedbackDialog';
+
+
 
 export default function TemplatesPageNew() {
   const router = useRouter();
@@ -26,6 +30,19 @@ export default function TemplatesPageNew() {
   const [selectedSignature, setSelectedSignature] = useState<string | null>(null);
   const [isAddSignatureModalOpen, setIsAddSignatureModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [templateData, setTemplateData] = useState<Template>({
+    id: '',
+    name: '',
+    imageUrl: '',
+    width: 0,
+    height: 0,
+    placeholders: [],
+    signatures: []
+  });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState<string | null>(null); // To store dialog message
+  
 
   // Add signature deletion handler
   const handleSignatureDelete = (id: string) => {
@@ -40,7 +57,8 @@ export default function TemplatesPageNew() {
 
   const handleAddSignature = (name: string, width: number, height: number, imageUrl?: string) => {
     if (!template.imageUrl) {
-      alert("Please upload an image before adding signatures");
+      setDialogMessage('Please upload an image before adding signatures.');
+      setIsDialogOpen(true);
       return;
     }
   
@@ -63,12 +81,14 @@ export default function TemplatesPageNew() {
     if (!file) return;
   
     if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file.");
+      setDialogMessage('Please upload an image file.');
+      setIsDialogOpen(true);
       return;
     }
   
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB.");
+      setDialogMessage('Please upload an image smaller than 5MB.');
+      setIsDialogOpen(true);
       return;
     }
   
@@ -86,7 +106,8 @@ export default function TemplatesPageNew() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Failed to upload image:", errorText);
-        alert("Failed to upload image");
+        setDialogMessage('Failed to upload image.');
+        setIsDialogOpen(true);
         setUploading(false);
         return;
       }
@@ -98,7 +119,8 @@ export default function TemplatesPageNew() {
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Error uploading image");
+      setDialogMessage('Failed to upload image.');
+      setIsDialogOpen(true);
     } finally {
       setUploading(false);
     }
@@ -106,7 +128,8 @@ export default function TemplatesPageNew() {
 
   const handleAddPlaceholder = (name: string, style: PlaceholderStyle) => {
     if (!template.imageUrl) {
-      alert("Please upload an image before adding placeholders");
+      setDialogMessage('Please upload an image before adding placeholders.');
+      setIsDialogOpen(true);
       return;
     }
     
@@ -146,10 +169,17 @@ export default function TemplatesPageNew() {
 
   const handleSave = async () => {
     if (!template.name || !template.imageUrl) {
-      alert("Please provide a template name and upload an image.");
+      setDialogMessage('Please enter a name and upload an image before saving.');
+      setIsDialogOpen(true);
       return;
     }
   
+    if (template.placeholders?.length === 0) {
+      setDialogMessage('Please add at least one placeholder before saving.');
+      setIsDialogOpen(true);
+      return;
+    }
+    
     setSaving(true);
     try {
       const response = await fetch("/api/templates", {
@@ -164,11 +194,15 @@ export default function TemplatesPageNew() {
         throw new Error(errorMessage);
       }
   
-      alert("Template saved successfully!");
+     
       router.push("/templates");
     } catch (error) {
-      console.error("Error saving template:", error);
-      alert(error instanceof Error ? error.message : "Failed to save template");
+      if (error instanceof Error) {
+        setDialogMessage(error.message);
+      } else {
+        setDialogMessage('An unknown error occurred');
+        setIsDialogOpen(true);
+      }
     } finally {
       setSaving(false);
     }
@@ -189,6 +223,13 @@ export default function TemplatesPageNew() {
                 Create Template
               </h1>
               <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+                <Button 
+                    onClick={() => setShowPreview(true)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    disabled={!template.imageUrl}
+                  >
+                  Preview Template
+                </Button>
                 <Button
                   onClick={() => setIsAddModalOpen(true)}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -314,6 +355,16 @@ export default function TemplatesPageNew() {
           open={isAddSignatureModalOpen}
           onOpenChange={setIsAddSignatureModalOpen}
           onAdd={handleAddSignature}
+        />
+        <TemplatePreviewModal
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          template={template}
+        />
+        <FeedbackDialog 
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          message={dialogMessage}
         />
       </div>
     </DndProvider>

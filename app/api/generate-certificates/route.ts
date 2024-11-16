@@ -43,11 +43,6 @@ function getUserIdFromRequest(request: Request): string | null {
   }
 }
 
-function calculateCanvasFontSize(fontSize: number, templateWidth: number, canvasWidth: number): number {
-  const scaleFactor = canvasWidth / templateWidth;
-  return fontSize * scaleFactor;
-}
-
 export async function POST(request: Request) {
   const userId = getUserIdFromRequest(request);
   if (!userId) {
@@ -98,11 +93,7 @@ export async function POST(request: Request) {
       (template.placeholders as any[])?.forEach((placeholder: any) => {
         const value = record[placeholder.name];
         if (value) {
-          const canvasFontSize = calculateCanvasFontSize(
-            placeholder.style.fontSize,
-            template.width,
-            canvas.width
-          );
+          const canvasFontSize = placeholder.style.fontSize;
           
           ctx.font = `${placeholder.style.fontWeight} ${canvasFontSize}px ${placeholder.style.fontFamily}`;
           ctx.fillStyle = placeholder.style.fontColor;
