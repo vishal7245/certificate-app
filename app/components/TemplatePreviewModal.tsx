@@ -109,7 +109,7 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
             <Button 
               onClick={generatePreview}
               disabled={isGenerating}
-              className="w-full"
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
               {isGenerating ? 'Generating Preview...' : 'Generate Preview'}
             </Button>
@@ -135,7 +135,7 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={downloadPreview} disabled={!previewUrl}>
+          <Button onClick={downloadPreview} disabled={!previewUrl} className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600'>
             Download Preview
           </Button>
         </DialogFooter>

@@ -143,7 +143,9 @@ export function AddPlaceholderModal({ open, onOpenChange, onAdd }: AddPlaceholde
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add Placeholder</Button>
+            <Button type="submit"
+            className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600'
+            >Add Placeholder</Button>
           </div>
         </form>
       </DialogContent>

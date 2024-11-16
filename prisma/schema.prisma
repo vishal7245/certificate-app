@@ -26,10 +26,10 @@ model Template {
   id           String        @id @default(cuid())
   name         String
   imageUrl     String
-  width        Int          // Added field for template width
-  height       Int          // Added field for template height
+  width        Int          
+  height       Int          
   placeholders Json
-  signatures   Json        // Added field to store signatures
+  signatures   Json       
   creatorId    String
   creator      User          @relation(fields: [creatorId], references: [id])
   certificates Certificate[]
@@ -39,13 +39,13 @@ model Template {
 
 
 model Certificate {
-  id               String     @id @default(cuid())
-  templateId       String
-  template         Template   @relation(fields: [templateId], references: [id])
-  uniqueIdentifier String     @unique
-  data             Json
+  id                String     @id @default(cuid())
+  templateId        String?    // Made optional to allow null
+  template          Template?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  uniqueIdentifier  String     @unique
+  data              Json
   generatedImageUrl String
-  creatorId        String
-  creator          User       @relation(fields: [creatorId], references: [id])
-  createdAt        DateTime   @default(now())
+  creatorId         String
+  creator           User       @relation(fields: [creatorId], references: [id])
+  createdAt         DateTime   @default(now())
 }

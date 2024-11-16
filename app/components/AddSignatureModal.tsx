@@ -172,7 +172,7 @@ export function AddSignatureModal({ open, onOpenChange, onAdd }: Props) {
             </Button>
             <Button 
               onClick={handleAdd} 
-              className="bg-blue-500 text-white"
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               disabled={!imageUrl || uploading || !name.trim()}
             >
               Add
