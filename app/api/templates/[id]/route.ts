@@ -1,3 +1,5 @@
+// app/api/templates/[id]/route.ts
+
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import jwt from 'jsonwebtoken';
@@ -7,10 +9,10 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 function getUserIdFromRequest(request: Request): string | null {
   try {
     const token = request.headers
-      .get("cookie")
-      ?.split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
+      .get('cookie')
+      ?.split('; ')
+      .find((c) => c.startsWith('token='))
+      ?.split('=')[1];
 
     if (!token) {
       return null;
@@ -25,76 +27,52 @@ function getUserIdFromRequest(request: Request): string | null {
 }
 
 export async function GET(
-    request: Request,
-    context: { params: { id: string } }
-  ) {
-    try {
-      const { id } = context.params;
-      const userId = getUserIdFromRequest(request);
-  
-      if (!userId) {
-        return new NextResponse(
-          JSON.stringify({ error: 'Unauthorized' }),
-          {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-  
-      // Fetch the template and verify it belongs to the user
-      const template = await prisma.template.findFirst({
-        where: {
-          id,
-          creatorId: userId,
-        },
-      });
-  
-      if (!template) {
-        return new NextResponse(
-          JSON.stringify({ error: 'Template not found or unauthorized' }),
-          {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-  
-      return new NextResponse(
-        JSON.stringify(template),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    } catch (error) {
-      console.error('Error fetching template:', error);
-      return new NextResponse(
-        JSON.stringify({ error: 'Failed to fetch template' }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-  }
-
-export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = await params; // Await params before using it
     const userId = getUserIdFromRequest(request);
 
     if (!userId) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Unauthorized' }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Fetch the template and verify it belongs to the user
+    const template = await prisma.template.findFirst({
+      where: {
+        id,
+        creatorId: userId,
+      },
+    });
+
+    if (!template) {
+      return NextResponse.json(
+        { error: 'Template not found or unauthorized' },
+        { status: 404 }
       );
+    }
+
+    return NextResponse.json(template, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching template:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch template' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } | Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params; // Await params before using it
+    const userId = getUserIdFromRequest(request);
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify that the template belongs to the user
@@ -106,12 +84,9 @@ export async function DELETE(
     });
 
     if (!template) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Template not found or unauthorized' }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      return NextResponse.json(
+        { error: 'Template not found or unauthorized' },
+        { status: 404 }
       );
     }
 
@@ -132,58 +107,53 @@ export async function DELETE(
       },
     });
 
-    return new NextResponse(
-      JSON.stringify({ success: true }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('Error deleting template:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Failed to delete template' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+    return NextResponse.json(
+      { error: 'Failed to delete template' },
+      { status: 500 }
     );
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } | Promise<{ id: string }> }
+) {
+  try {
+    const { id: templateId } = await params; // Await params before using it
     const userId = getUserIdFromRequest(request);
+
     if (!userId) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-  
-    const templateId = params.id;
+
     const body = await request.json();
-  
+
     if (!body.name || !body.imageUrl) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: 'name' and 'imageUrl'" }),
+      return NextResponse.json(
+        { error: "Missing required fields: 'name' and 'imageUrl'" },
         { status: 400 }
       );
     }
-  
-    try {
-      const template = await prisma.template.update({
-        where: { id: templateId, creatorId: userId },
-        data: {
-          name: body.name,
-          imageUrl: body.imageUrl,
-          placeholders: body.placeholders || [],
-          signatures: body.signatures || [],
-        },
-      });
-  
-      return new Response(JSON.stringify(template), { status: 200 });
-    } catch (error) {
-      console.error("Error updating template:", error);
-      return new Response(
-        JSON.stringify({ error: "Failed to update template" }),
-        { status: 500 }
-      );
-    }
+
+    const template = await prisma.template.update({
+      where: { id: templateId, creatorId: userId },
+      data: {
+        name: body.name,
+        imageUrl: body.imageUrl,
+        placeholders: body.placeholders || [],
+        signatures: body.signatures || [],
+      },
+    });
+
+    return NextResponse.json(template, { status: 200 });
+  } catch (error) {
+    console.error('Error updating template:', error);
+    return NextResponse.json(
+      { error: 'Failed to update template' },
+      { status: 500 }
+    );
   }
+}
