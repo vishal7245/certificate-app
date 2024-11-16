@@ -13,6 +13,7 @@ type Props = {
   onPlaceholderMove: (id: string, position: { x: number; y: number }) => void;
   onSignatureMove: (id: string, position: { x: number; y: number }) => void;
   onSignatureResize: (id: string, style: { Width: number; Height: number }) => void;
+  onSignatureDelete: (id: string) => void;  // New prop for handling signature deletion
   onPlaceholderSelect?: (id: string | null) => void;
   onSignatureSelect?: (id: string | null) => void;
   selectedPlaceholderId?: string | null;
@@ -26,6 +27,7 @@ export function TemplateCanvas({
   onPlaceholderMove,
   onSignatureMove,
   onSignatureResize,
+  onSignatureDelete,  // Add the new prop to the destructuring
   onPlaceholderSelect,
   onSignatureSelect,
   selectedPlaceholderId,
@@ -156,6 +158,7 @@ export function TemplateCanvas({
           scale={scale}
           onPositionChange={onSignatureMove}
           onResize={onSignatureResize}
+          onDelete={onSignatureDelete}  // Pass the delete handler to the signature component
           onSelect={onSignatureSelect ? () => onSignatureSelect(signature.id) : undefined}
           isSelected={selectedSignatureId === signature.id}
         />

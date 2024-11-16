@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDrag } from 'react-dnd';
-import { ImageOff } from 'lucide-react';
+import { ImageOff, X } from 'lucide-react';
 
 interface Position {
   x: number;
@@ -24,14 +23,9 @@ interface Props {
   scale: number;
   onPositionChange: (id: string, position: Position) => void;
   onResize: (id: string, style: Style) => void;
-  onSelect?: () => void;
+  onSelect?: (id: string) => void;
+  onDelete?: (id: string) => void;
   isSelected?: boolean;
-}
-
-interface DragItem {
-  id: string;
-  type: string;
-  initialPosition: Position;
 }
 
 export function ResizableDraggableSignature({
@@ -40,48 +34,65 @@ export function ResizableDraggableSignature({
   onPositionChange,
   onResize,
   onSelect,
+  onDelete,
   isSelected,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [imageError, setImageError] = useState(false);
   
   const initialSize = useRef<Style | null>(null);
   const initialMousePos = useRef<Position | null>(null);
+  const initialElementPos = useRef<Position | null>(null);
 
-  const [{ isDragging }, drag] = useDrag<DragItem, void, { isDragging: boolean }>(() => ({
-    type: 'signature',
-    item: {
-      id: signature.id,
-      type: 'signature',
-      initialPosition: signature.position,
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-    canDrag: !isResizing,
-    end: (item, monitor) => {
-      const delta = monitor.getDifferenceFromInitialOffset();
-      if (delta) {
-        const newX = Math.round(item.initialPosition.x + delta.x / scale);
-        const newY = Math.round(item.initialPosition.y + delta.y / scale);
-        onPositionChange(item.id, { x: newX, y: newY });
-      }
-    },
-  }), [signature.id, signature.position, scale, isResizing]);
+  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (isResizing) return;
+    
+    e.stopPropagation();
+    const touch = 'touches' in e ? e.touches[0] : e;
+    
+    setIsDragging(true);
+    initialMousePos.current = {
+      x: touch.clientX,
+      y: touch.clientY
+    };
+    initialElementPos.current = {
+      x: signature.position.x,
+      y: signature.position.y
+    };
+  }, [isResizing, signature.position]);
 
-  const handleResizeMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isResizing || !initialMousePos.current || !initialSize.current || !ref.current) return;
+  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isDragging || !initialMousePos.current || !initialElementPos.current) return;
 
     e.preventDefault();
+    const touch = 'touches' in e ? e.touches[0] : e;
     
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const deltaX = (touch.clientX - initialMousePos.current.x) / scale;
+    const deltaY = (touch.clientY - initialMousePos.current.y) / scale;
 
-    const deltaX = (clientX - initialMousePos.current.x) / scale;
-    const deltaY = (clientY - initialMousePos.current.y) / scale;
+    const newX = Math.round(initialElementPos.current.x + deltaX);
+    const newY = Math.round(initialElementPos.current.y + deltaY);
 
-    // Maintain aspect ratio during resize
+    onPositionChange(signature.id, { x: newX, y: newY });
+  }, [isDragging, scale, onPositionChange, signature.id]);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    initialMousePos.current = null;
+    initialElementPos.current = null;
+  }, []);
+
+  const handleResizeMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isResizing || !initialMousePos.current || !initialSize.current) return;
+
+    e.preventDefault();
+    const touch = 'touches' in e ? e.touches[0] : e;
+    
+    const deltaX = (touch.clientX - initialMousePos.current.x) / scale;
+    const deltaY = (touch.clientY - initialMousePos.current.y) / scale;
+
     const aspectRatio = initialSize.current.Width / initialSize.current.Height;
     const absDeltaX = Math.abs(deltaX);
     const absDeltaY = Math.abs(deltaY);
@@ -103,41 +114,56 @@ export function ResizableDraggableSignature({
     });
   }, [isResizing, scale, onResize, signature.id]);
 
-  const handleResizeEnd = useCallback(() => {
-    setIsResizing(false);
-    initialMousePos.current = null;
-    initialSize.current = null;
-  }, []);
-
   const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const touch = 'touches' in e ? e.touches[0] : e;
 
     setIsResizing(true);
-    initialMousePos.current = { x: clientX, y: clientY };
+    initialMousePos.current = {
+      x: touch.clientX,
+      y: touch.clientY
+    };
     initialSize.current = {
       Width: signature.style.Width,
       Height: signature.style.Height,
     };
   }, [signature.style]);
 
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+    initialMousePos.current = null;
+    initialSize.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleDragMove, { passive: false });
+      window.addEventListener('touchend', handleDragEnd);
+
+      return () => {
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+        window.removeEventListener('touchmove', handleDragMove);
+        window.removeEventListener('touchend', handleDragEnd);
+      };
+    }
+  }, [isDragging, handleDragMove, handleDragEnd]);
+
   useEffect(() => {
     if (isResizing) {
-      const handleMouseMove = (e: MouseEvent) => handleResizeMove(e);
-      const handleTouchMove = (e: TouchEvent) => handleResizeMove(e);
-      
-      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mousemove', handleResizeMove);
       window.addEventListener('mouseup', handleResizeEnd);
-      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchmove', handleResizeMove, { passive: false });
       window.addEventListener('touchend', handleResizeEnd);
 
       return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mousemove', handleResizeMove);
         window.removeEventListener('mouseup', handleResizeEnd);
-        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchmove', handleResizeMove);
         window.removeEventListener('touchend', handleResizeEnd);
       };
     }
@@ -145,21 +171,26 @@ export function ResizableDraggableSignature({
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onSelect?.();
-  }, [onSelect]);
+    onSelect?.(signature.id);
+  }, [onSelect, signature.id]);
+
+  const handleDelete = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    onDelete?.(signature.id);
+  }, [onDelete, signature.id]);
 
   const handleImageError = useCallback(() => {
     setImageError(true);
     onResize(signature.id, { Width: 200, Height: 100 });
   }, [signature.id, onResize]);
 
-  drag(ref);
-
   return (
     <div
       ref={ref}
       onClick={handleClick}
-      className="absolute shadow-sm bg-white transition-colors"
+      onMouseDown={handleDragStart}
+      onTouchStart={handleDragStart}
+      className="absolute shadow-sm bg-white transition-colors touch-none"
       style={{
         left: `${signature.position.x * scale}px`,
         top: `${signature.position.y * scale}px`,
@@ -172,6 +203,15 @@ export function ResizableDraggableSignature({
         border: isSelected ? '2px solid blue' : '1px solid transparent',
       }}
     >
+      {/* Delete button */}
+      <div
+        className="absolute -top-2 -left-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors shadow-md"
+        onClick={handleDelete}
+        onTouchEnd={handleDelete}
+      >
+        <X className="w-4 h-4 text-white" />
+      </div>
+
       {!signature.imageUrl || imageError ? (
         <div className="w-full h-full flex items-center justify-center bg-gray-100">
           <ImageOff className="w-8 h-8 text-gray-400" />
@@ -192,7 +232,6 @@ export function ResizableDraggableSignature({
         />
       )}
 
-      {/* Resize handle */}
       <div
         onMouseDown={handleResizeStart}
         onTouchStart={handleResizeStart}

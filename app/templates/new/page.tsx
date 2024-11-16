@@ -18,6 +18,7 @@ export default function TemplatesPageNew() {
   const [template, setTemplate] = useState<Partial<Template>>({
     name: "",
     placeholders: [],
+    signatures: [], // Ensure signatures array is initialized
   });
   const [uploading, setUploading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -25,6 +26,17 @@ export default function TemplatesPageNew() {
   const [selectedSignature, setSelectedSignature] = useState<string | null>(null);
   const [isAddSignatureModalOpen, setIsAddSignatureModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Add signature deletion handler
+  const handleSignatureDelete = (id: string) => {
+    setTemplate((prev) => ({
+      ...prev,
+      signatures: prev.signatures?.filter((signature) => signature.id !== id) || [],
+    }));
+    if (selectedSignature === id) {
+      setSelectedSignature(null);
+    }
+  };
 
   const handleAddSignature = (name: string, width: number, height: number, imageUrl?: string) => {
     if (!template.imageUrl) {
@@ -37,7 +49,7 @@ export default function TemplatesPageNew() {
       name,
       position: { x: 50, y: 50 },
       style: { Width: width, Height: height },
-      imageUrl: imageUrl || "", // Ensure imageUrl is a string
+      imageUrl: imageUrl || "",
     };
   
     setTemplate((prev) => ({
@@ -45,7 +57,6 @@ export default function TemplatesPageNew() {
       signatures: [...(prev.signatures || []), newSignature],
     }));
   };
-  
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -139,7 +150,7 @@ export default function TemplatesPageNew() {
       return;
     }
   
-    setSaving(true); // Add a state to show loading if needed
+    setSaving(true);
     try {
       const response = await fetch("/api/templates", {
         method: "POST",
@@ -148,11 +159,8 @@ export default function TemplatesPageNew() {
       });
   
       if (!response.ok) {
-        // Extract detailed error message from the response
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData?.error || "An unknown error occurred";
-  
-        console.error("Failed to save template:", errorData);
         throw new Error(errorMessage);
       }
   
@@ -165,7 +173,6 @@ export default function TemplatesPageNew() {
       setSaving(false);
     }
   };
-  
 
   const selectedPlaceholderData = template.placeholders?.find(
     (p) => p.id === selectedPlaceholder
@@ -182,7 +189,7 @@ export default function TemplatesPageNew() {
                 Create Template
               </h1>
               <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
-              <Button
+                <Button
                   onClick={() => setIsAddModalOpen(true)}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                   disabled={!template.imageUrl}
@@ -196,10 +203,19 @@ export default function TemplatesPageNew() {
                 >
                   Add Signature
                 </Button>
-                <Button onClick={handleSave} variant="default" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                  Save Template
+                <Button 
+                  onClick={handleSave} 
+                  variant="default" 
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save Template'}
                 </Button>
-                <Button onClick={() => router.push("/templates")} variant="outline" className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 hover:text-white">
+                <Button 
+                  onClick={() => router.push("/templates")} 
+                  variant="outline" 
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 hover:text-white"
+                >
                   Cancel
                 </Button>
               </div>
@@ -236,51 +252,40 @@ export default function TemplatesPageNew() {
 
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="flex-1">
-              <TemplateCanvas
-                imageUrl={template.imageUrl}
-                placeholders={template.placeholders || []}
-                signatures={template.signatures || []} // Include signatures
-                onPlaceholderMove={(id, position) => {
-                  setTemplate((prev) => ({
-                    ...prev,
-                    placeholders: (prev.placeholders || []).map((placeholder) =>
-                      placeholder.id === id ? { ...placeholder, position } : placeholder
+                <TemplateCanvas
+                  imageUrl={template.imageUrl}
+                  placeholders={template.placeholders || []}
+                  signatures={template.signatures || []}
+                  onPlaceholderMove={(id, position) => {
+                    setTemplate((prev) => ({
+                      ...prev,
+                      placeholders: (prev.placeholders || []).map((placeholder) =>
+                        placeholder.id === id ? { ...placeholder, position } : placeholder
+                      ),
+                    }));
+                  }}
+                  onSignatureMove={(id, position) => {
+                    setTemplate((prev) => ({
+                      ...prev,
+                      signatures: (prev.signatures || []).map((signature) =>
+                        signature.id === id ? { ...signature, position } : signature
                     ),
-                  }));
-                }}
-                onSignatureMove={(id, position) => {
-                  setTemplate((prev) => ({
-                    ...prev,
-                    signatures: (prev.signatures || []).map((signature) =>
-                      signature.id === id ? { ...signature, position } : signature
-                    ),
-                  }));
-                }}
-                onSignatureResize={(id, style) => {
-                  setTemplate((prev) => ({
-                    ...prev,
-                    signatures: (prev.signatures || []).map((signature) =>
-                      signature.id === id ? { ...signature, style: { ...signature.style, ...style } } : signature
-                    ),
-                  }));
-                }}
-                onPlaceholderSelect={(id) => {
-                  setTemplate((prev) => ({
-                    ...prev,
-                    selectedPlaceholderId: id,
-                  }));
-                }}
-                onSignatureSelect={(id) => {
-                  setTemplate((prev) => ({
-                    ...prev,
-                    selectedSignatureId: id,
-                  }));
-                }}
-                selectedPlaceholderId={selectedPlaceholder}
-                selectedSignatureId={selectedSignature}
-              />
-
-
+                    }));
+                  }}
+                  onSignatureResize={(id, style) => {
+                    setTemplate((prev) => ({
+                      ...prev,
+                      signatures: (prev.signatures || []).map((signature) =>
+                        signature.id === id ? { ...signature, style } : signature
+                      ),
+                    }));
+                  }}
+                  onSignatureDelete={handleSignatureDelete}
+                  onPlaceholderSelect={setSelectedPlaceholder}
+                  onSignatureSelect={setSelectedSignature}
+                  selectedPlaceholderId={selectedPlaceholder}
+                  selectedSignatureId={selectedSignature}
+                />
               </div>
 
               <div className="w-full lg:w-80 mt-6 lg:mt-0">
@@ -314,4 +319,3 @@ export default function TemplatesPageNew() {
     </DndProvider>
   );
 }
-
