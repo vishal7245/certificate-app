@@ -66,11 +66,11 @@ export async function POST(request: Request) {
           ctx.fillStyle = style.fontColor;
           ctx.textAlign = style.textAlign as CanvasTextAlign;
 
-          let x = position.x;
-          if (style.textAlign === 'center') {
-            ctx.textAlign = 'center';
-          } else if (style.textAlign === 'right') {
+          let x = placeholder.position.x;
+          if (placeholder.style.textAlign === 'right') {
             ctx.textAlign = 'right';
+          } else if (placeholder.style.textAlign === 'center') {
+            ctx.textAlign = 'center';
           } else {
             ctx.textAlign = 'left';
           }

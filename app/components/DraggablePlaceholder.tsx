@@ -8,7 +8,17 @@ interface Position {
   y: number;
 }
 
-
+function getTransformStyle(textAlign: string): string {
+  switch (textAlign) {
+    case 'left':
+      return 'translate(0, -50%)';
+    case 'right':
+      return 'translate(-100%, -50%)';
+    case 'center':
+    default:
+      return 'translate(-50%, -50%)';
+  }
+}
 
 interface Props {
   placeholder: Placeholder;
@@ -55,11 +65,18 @@ export function DraggablePlaceholder({
     const deltaX = (touch.clientX - initialMousePos.current.x) / scale;
     const deltaY = (touch.clientY - initialMousePos.current.y) / scale;
 
-    const newX = Math.round(initialElementPos.current.x + deltaX);
+    let newX = Math.round(initialElementPos.current.x + deltaX);
     const newY = Math.round(initialElementPos.current.y + deltaY);
 
+    if (placeholder.style.textAlign === 'right') {
+      // For right alignment, the x-coordinate represents distance from right edge
+      const canvasWidth = ref.current?.parentElement?.clientWidth || 0;
+      newX = canvasWidth - (canvasWidth - initialElementPos.current.x - deltaX);
+    }
+
+    newX = Math.round(newX);
     onPositionChange(placeholder.id, { x: newX, y: newY });
-  }, [isDragging, scale, onPositionChange, placeholder.id]);
+  }, [isDragging, scale, onPositionChange, placeholder.id, placeholder.style.textAlign]);
 
   const handleDragEnd = useCallback((e: MouseEvent | TouchEvent) => {
     const touch = 'changedTouches' in e ? e.changedTouches[0] : e;
@@ -102,7 +119,7 @@ export function DraggablePlaceholder({
     position: 'absolute',
     left: `${placeholder.position.x * scale}px`,
     top: `${placeholder.position.y * scale}px`,
-    transform: 'translate(-50%, -50%)',
+    transform: getTransformStyle(placeholder.style.textAlign),
     cursor: 'move',
     opacity: isDragging ? 0.8 : 1,
     touchAction: 'none',

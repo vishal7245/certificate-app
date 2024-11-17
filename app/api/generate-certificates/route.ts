@@ -100,11 +100,13 @@ export async function POST(request: Request) {
           ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
           
           let x = placeholder.position.x;
-          if (placeholder.style.textAlign === 'center') {
-            ctx.textAlign = 'center';
-          } else if (placeholder.style.textAlign === 'right') {
+          if (placeholder.style.textAlign === 'right') {
+            // For right alignment, x is already at the right edge
             ctx.textAlign = 'right';
+          } else if (placeholder.style.textAlign === 'center') {
+            ctx.textAlign = 'center';
           } else {
+            // For left alignment, x is already at the left edge
             ctx.textAlign = 'left';
           }
           
