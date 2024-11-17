@@ -62,9 +62,10 @@ export async function POST(request: Request) {
         if (previewValue) {
           const canvasFontSize = style.fontSize;
 
-          ctx.font = `${style.fontWeight} ${canvasFontSize}px ${style.fontFamily}`;
-          ctx.fillStyle = style.fontColor;
-          ctx.textAlign = style.textAlign as CanvasTextAlign;
+          ctx.textBaseline = 'middle'; 
+          ctx.font = `${placeholder.style.fontWeight} ${canvasFontSize}px ${placeholder.style.fontFamily}`;
+          ctx.fillStyle = placeholder.style.fontColor;
+          ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
 
           let x = placeholder.position.x;
           if (placeholder.style.textAlign === 'right') {

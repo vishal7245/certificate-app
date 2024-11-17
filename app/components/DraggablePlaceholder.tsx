@@ -118,6 +118,7 @@ export function DraggablePlaceholder({
   const style: React.CSSProperties = {
     position: 'absolute',
     left: `${placeholder.position.x * scale}px`,
+    // Add baseline offset to account for text metrics
     top: `${placeholder.position.y * scale}px`,
     transform: getTransformStyle(placeholder.style.textAlign),
     cursor: 'move',
@@ -132,6 +133,11 @@ export function DraggablePlaceholder({
     color: placeholder.style.fontColor,
     fontWeight: placeholder.style.fontWeight,
     textAlign: placeholder.style.textAlign,
+    // Add line height to match font size for better vertical alignment
+    lineHeight: '1',
+    // Add padding to better center the text vertically
+    paddingTop: '0.25em',
+    paddingBottom: '0.25em',
   };
 
   return (

@@ -95,6 +95,7 @@ export async function POST(request: Request) {
         if (value) {
           const canvasFontSize = placeholder.style.fontSize;
           
+          ctx.textBaseline = 'middle'; // Add this line before drawing text
           ctx.font = `${placeholder.style.fontWeight} ${canvasFontSize}px ${placeholder.style.fontFamily}`;
           ctx.fillStyle = placeholder.style.fontColor;
           ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
