@@ -206,9 +206,7 @@ export async function POST(request: Request) {
   const certificates = await Promise.all(
     records.map(async (record: Record<string, string>) => {
 
-      if (Array.isArray(template.placeholders)) {
-        await registerCustomFonts(template.placeholders);
-      }
+      
       
       // Load the template image
       const image = await loadImage(template.imageUrl);
@@ -223,18 +221,23 @@ export async function POST(request: Request) {
         (template.placeholders as any[])?.map(async (placeholder: any) => {
           const value = record[placeholder.name];
           if (value) {
-            let fontFamily = placeholder.style.fontFamily || 'Arial';
+            let fontFamily = 'Arial'; // Default font
+            if (placeholder.style.customFontUrl) {
+              const customFontLoaded = await loadCustomFont(ctx, placeholder.style.fontFamily, placeholder.style.customFontUrl);
+              if (customFontLoaded) {
+                fontFamily = placeholder.style.fontFamily;
+              } else {
+                console.warn(`Falling back to default font for placeholder: ${placeholder.name}`);
+              }
+            }
 
-            // Apply text styles with logging
+            // Apply text styles
             ctx.textBaseline = 'middle';
-            const fontString = `${placeholder.style.fontWeight} ${placeholder.style.fontSize}px ${fontFamily}`;
-            ctx.font = fontString;
-            console.log(`Applied font string: ${fontString}`);
-
+            ctx.font = `${placeholder.style.fontWeight} ${placeholder.style.fontSize}px ${fontFamily}`;
             ctx.fillStyle = placeholder.style.fontColor;
-            ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
+            ctx.textAlign = placeholder.style.textAlign;
 
-            // Draw the text
+            // Draw text
             ctx.fillText(value, placeholder.position.x, placeholder.position.y);
           }
         })
