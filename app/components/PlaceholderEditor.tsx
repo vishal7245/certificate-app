@@ -70,7 +70,16 @@ export function PlaceholderEditor({ placeholder, onUpdate, onDelete }: Placehold
               <SelectItem value="Arial">Arial</SelectItem>
               <SelectItem value="Times New Roman">Times New Roman</SelectItem>
               <SelectItem value="Helvetica">Helvetica</SelectItem>
-              <SelectItem value="Courier">Courier</SelectItem>
+              <SelectItem value="Courier New">Courier New</SelectItem>
+              <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
+              <SelectItem value="Impact">Impact</SelectItem>
+              <SelectItem value="Georgia">Georgia</SelectItem>
+              <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
+              <SelectItem value="Verdana">Verdana</SelectItem>
+              <SelectItem value="Webdings">Webdings</SelectItem>
+              <SelectItem value="Liberation Sans">Liberation Sans</SelectItem>
+              <SelectItem value="Liberation Serif">Liberation Serif</SelectItem>
+              <SelectItem value="Liberation Mono">Liberation Mono</SelectItem>
             </SelectContent>
           </Select>
         </div>
