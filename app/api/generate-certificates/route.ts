@@ -132,7 +132,7 @@ async function registerCustomFonts(placeholders: any[]) {
   for (const placeholder of placeholders) {
     if (placeholder.style.customFontUrl) {
       // Generate a unique font family name
-      const fontFamily = `customFont-${placeholder.name}`;
+      const fontFamily = `customFont-${placeholder.name}_${Date.now()}`;
       customFonts.set(fontFamily, placeholder.style.customFontUrl);
       // Update the placeholder's font family to the unique name
       placeholder.style.fontFamily = fontFamily;
