@@ -26,6 +26,7 @@ export function AddPlaceholderModal({ open, onOpenChange, onAdd }: AddPlaceholde
     fontWeight: 'normal',
     textAlign: 'center',
     customFontUrl: undefined,
+    customfontFamily: undefined,
   });
   const [customFontFile, setCustomFontFile] = useState<File | null>(null);
   const [isUsingCustomFont, setIsUsingCustomFont] = useState(false);
@@ -48,7 +49,7 @@ export function AddPlaceholderModal({ open, onOpenChange, onAdd }: AddPlaceholde
       const { fontUrl } = await response.json();
       setStyle((prev) => ({
         ...prev,
-        fontFamily: file.name.split('.')[0],
+        customfontFamily: file.name.split('.')[0],
         customFontUrl: fontUrl, // Save the custom font URL
       }));
       setCustomFontFile(file);

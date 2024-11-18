@@ -55,7 +55,7 @@ async function downloadFont(fontUrl: string): Promise<string> {
   }
 }
 
-async function loadCustomFont(ctx: CanvasRenderingContext2D, fontUrl: string): Promise<string | null> {
+async function loadCustomFont(ctx: CanvasRenderingContext2D, fontUrl: string, customfontFamily: string): Promise<string | null> {
   try {
     const fontPath = await downloadFont(fontUrl);
     if (!fontPath) {
@@ -63,7 +63,7 @@ async function loadCustomFont(ctx: CanvasRenderingContext2D, fontUrl: string): P
       return null;
     }
 
-    const fontFamily = path.basename(fontPath, path.extname(fontPath));
+    const fontFamily = customfontFamily;
     registerFont(fontPath, { family: fontFamily });
 
     return fontFamily;
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
             let fontFamily = placeholder.style.fontFamily;
             console.log(`Place 1: ${fontFamily}`)
             if (placeholder.style.customFontUrl) {
-              const customFontLoaded = await loadCustomFont(ctx, placeholder.style.customFontUrl);
+              const customFontLoaded = await loadCustomFont(ctx, placeholder.style.customFontUrl, placeholder.style.customfontFamily);
               if (customFontLoaded) {
                 fontFamily = customFontLoaded;
                 console.log(`Place 2: ${fontFamily}`)

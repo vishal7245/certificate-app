@@ -13,6 +13,7 @@ export interface PlaceholderStyle {
   fontWeight: string;
   textAlign: 'left' | 'center' | 'right';
   customFontUrl?: string; 
+  customfontFamily?: string;
 }
   
 export interface Placeholder {
