@@ -99,31 +99,38 @@ async function getFontPath(fontUrl: string): Promise<string> {
   return fontDownloadPromise;
 }
 
-async function loadCustomFont(ctx: CanvasRenderingContext2D, fontFamily: string, fontUrl: string): Promise<boolean> {
+async function loadCustomFont(ctx: CanvasRenderingContext2D, fontUrl: string): Promise<string | null> {
   try {
     const fontPath = await getFontPath(fontUrl);
     if (!fontPath) {
       console.error(`Failed to get font path for: ${fontUrl}`);
-      return false;
+      return null;
     }
 
-    // Register the font with node-canvas
-    registerFont(fontPath, { family: fontFamily });
-    console.log(`Registered font: ${fontFamily} from ${fontPath}`);
+    // Extract font name from the file name
+    const fontFamily = path.basename(fontPath, path.extname(fontPath));
+    if (!fontCache.has(fontFamily)) {
+      registerFont(fontPath, { family: fontFamily });
+      fontCache.set(fontFamily, Promise.resolve(fontPath)); // Cache by font name
+      console.log(`Registered font: ${fontFamily} from ${fontPath}`);
+    } else {
+      console.log(`Font already registered: ${fontFamily}`);
+    }
 
-    // Verify the font is actually loaded
+    // Verify font load
     const fontLoaded = await verifyFontLoaded(ctx, fontFamily);
     if (!fontLoaded) {
       console.error(`Font verification failed for: ${fontFamily}`);
-      return false;
+      return null;
     }
 
-    return true;
+    return fontFamily;
   } catch (error) {
-    console.error(`Font loading error for ${fontUrl}:`, error);
-    return false;
+    console.error(`Error loading custom font: ${fontUrl}`, error);
+    return null;
   }
 }
+
 
 async function registerCustomFonts(placeholders: any[]) {
   const customFonts = new Map(); // Map from fontFamily to fontUrl
@@ -221,9 +228,9 @@ export async function POST(request: Request) {
         (template.placeholders as any[])?.map(async (placeholder: any) => {
           const value = record[placeholder.name];
           if (value) {
-            let fontFamily = 'Arial'; // Default font
+            let fontFamily = placeholder.style.fontFamily || "Arial"; 
             if (placeholder.style.customFontUrl) {
-              const customFontLoaded = await loadCustomFont(ctx, placeholder.style.fontFamily, placeholder.style.customFontUrl);
+              const customFontLoaded = await loadCustomFont(ctx, placeholder.style.customFontUrl);
               if (customFontLoaded) {
                 fontFamily = placeholder.style.fontFamily;
               } else {
