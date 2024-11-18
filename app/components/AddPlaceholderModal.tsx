@@ -73,10 +73,6 @@ export function AddPlaceholderModal({ open, onOpenChange, onAdd }: AddPlaceholde
                 <SelectItem value="Georgia">Georgia</SelectItem>
                 <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
                 <SelectItem value="Verdana">Verdana</SelectItem>
-                <SelectItem value="Webdings">Webdings</SelectItem>
-                <SelectItem value="Liberation Sans">Liberation Sans</SelectItem>
-                <SelectItem value="Liberation Serif">Liberation Serif</SelectItem>
-                <SelectItem value="Liberation Mono">Liberation Mono</SelectItem>
               </SelectContent>
             </Select>
           </div>
