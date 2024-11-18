@@ -228,7 +228,8 @@ export async function POST(request: Request) {
         (template.placeholders as any[])?.map(async (placeholder: any) => {
           const value = record[placeholder.name];
           if (value) {
-            let fontFamily = placeholder.style.fontFamily || "Arial"; 
+            let fontFamily = placeholder.style.fontFamily;
+            console.log(` Place 1: ${placeholder.style.fontFamily}`);
             if (placeholder.style.customFontUrl) {
               const customFontLoaded = await loadCustomFont(ctx, placeholder.style.customFontUrl);
               if (customFontLoaded) {
