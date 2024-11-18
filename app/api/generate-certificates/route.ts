@@ -140,10 +140,12 @@ export async function POST(request: Request) {
           const value = record[placeholder.name];
           if (value) {
             let fontFamily = placeholder.style.fontFamily;
+            console.log(`Place 1: ${fontFamily}`)
             if (placeholder.style.customFontUrl) {
               const customFontLoaded = await loadCustomFont(ctx, placeholder.style.customFontUrl);
               if (customFontLoaded) {
                 fontFamily = customFontLoaded;
+                console.log(`Place 2: ${fontFamily}`)
               } else {
                 console.warn(`Falling back to default font for placeholder: ${placeholder.name}`);
               }
