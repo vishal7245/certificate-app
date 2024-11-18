@@ -12,6 +12,7 @@ export interface PlaceholderStyle {
   fontColor: string;
   fontWeight: string;
   textAlign: 'left' | 'center' | 'right';
+  customFontUrl?: string; 
 }
   
 export interface Placeholder {

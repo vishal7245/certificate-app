@@ -4,9 +4,17 @@ import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import { parse } from 'csv-parse/sync';
 import { uploadToS3 } from '@/app/lib/s3';
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage, registerFont, CanvasRenderingContext2D } from 'canvas';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
+import { createHash } from 'crypto';
+import os from 'os';
+
+const fontCache: Map<string, Promise<string>> = new Map();
+
 
 interface FileLike {
   arrayBuffer: () => Promise<ArrayBuffer>;
@@ -22,6 +30,122 @@ function isFileLike(value: any): value is FileLike {
     typeof value.arrayBuffer === 'function' &&
     typeof value.text === 'function' &&
     (typeof value.name === 'string' || typeof value.name === 'undefined')
+  );
+}
+
+function cleanupTempFonts() {
+  const tempDir = path.join(__dirname, 'temp_fonts');
+  if (fs.existsSync(tempDir)) {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function verifyFontLoaded(ctx: CanvasRenderingContext2D, fontFamily: string): Promise<boolean> {
+  // Test if font is actually loaded by comparing metrics with a fallback font
+  const testText = 'test';
+  const fallbackMetrics = ctx.measureText(testText);
+  
+  ctx.font = `20px "${fontFamily}"`;
+  const customFontMetrics = ctx.measureText(testText);
+  
+  // If metrics are different, the custom font is loaded
+  return fallbackMetrics.width !== customFontMetrics.width;
+}
+
+async function getFontPath(fontUrl: string): Promise<string> {
+  if (fontCache.has(fontUrl)) {
+    console.log(`Font is already being downloaded or cached: ${fontUrl}`);
+    return fontCache.get(fontUrl)!;
+  }
+
+  const fontDownloadPromise = (async () => {
+    try {
+      // Use the OS temporary directory
+      const tempDir = path.join(os.tmpdir(), 'temp_fonts');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      // Create a unique filename based on a hash of the font URL
+      const hash = createHash('md5').update(fontUrl).digest('hex');
+      const extension = path.extname(fontUrl.split('?')[0]) || '.ttf'; // Default to .ttf if no extension
+      const fontFilename = `${hash}${extension}`;
+      const fontPath = path.join(tempDir, fontFilename);
+
+      // Check if the font file already exists
+      if (!fs.existsSync(fontPath)) {
+        const response = await fetch(fontUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download font: ${fontUrl}`);
+        }
+
+        const fontBuffer = await response.buffer();
+        fs.writeFileSync(fontPath, fontBuffer);
+        console.log(`Font downloaded and saved: ${fontPath}`);
+      } else {
+        console.log(`Font already exists: ${fontPath}`);
+      }
+
+      return fontPath;
+    } catch (error) {
+      // Remove the failed Promise from the cache
+      fontCache.delete(fontUrl);
+      throw error;
+    }
+  })();
+
+  fontCache.set(fontUrl, fontDownloadPromise);
+
+  return fontDownloadPromise;
+}
+
+async function loadCustomFont(ctx: CanvasRenderingContext2D, fontFamily: string, fontUrl: string): Promise<boolean> {
+  try {
+    const fontPath = await getFontPath(fontUrl);
+    if (!fontPath) {
+      console.error(`Failed to get font path for: ${fontUrl}`);
+      return false;
+    }
+
+    // Register the font with node-canvas
+    registerFont(fontPath, { family: fontFamily });
+    console.log(`Registered font: ${fontFamily} from ${fontPath}`);
+
+    // Verify the font is actually loaded
+    const fontLoaded = await verifyFontLoaded(ctx, fontFamily);
+    if (!fontLoaded) {
+      console.error(`Font verification failed for: ${fontFamily}`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`Font loading error for ${fontUrl}:`, error);
+    return false;
+  }
+}
+
+async function registerCustomFonts(placeholders: any[]) {
+  const customFonts = new Map(); // Map from fontFamily to fontUrl
+
+  // Collect custom fonts
+  for (const placeholder of placeholders) {
+    if (placeholder.style.customFontUrl) {
+      // Generate a unique font family name
+      const fontFamily = `customFont-${placeholder.name}`;
+      customFonts.set(fontFamily, placeholder.style.customFontUrl);
+      // Update the placeholder's font family to the unique name
+      placeholder.style.fontFamily = fontFamily;
+    }
+  }
+
+  // Load and register all custom fonts
+  await Promise.all(
+    Array.from(customFonts.entries()).map(async ([fontFamily, fontUrl]) => {
+      const fontPath = await getFontPath(fontUrl);
+      registerFont(fontPath, { family: fontFamily });
+      console.log(`Registered font: ${fontFamily} from ${fontPath}`);
+    })
   );
 }
 
@@ -81,6 +205,11 @@ export async function POST(request: Request) {
 
   const certificates = await Promise.all(
     records.map(async (record: Record<string, string>) => {
+
+      if (Array.isArray(template.placeholders)) {
+        await registerCustomFonts(template.placeholders);
+      }
+      
       // Load the template image
       const image = await loadImage(template.imageUrl);
       const canvas = createCanvas(image.width, image.height);
@@ -90,30 +219,29 @@ export async function POST(request: Request) {
       ctx.drawImage(image, 0, 0);
 
       // Add placeholders
-      (template.placeholders as any[])?.forEach((placeholder: any) => {
-        const value = record[placeholder.name];
-        if (value) {
-          const canvasFontSize = placeholder.style.fontSize;
-          
-          ctx.textBaseline = 'middle'; // Add this line before drawing text
-          ctx.font = `${placeholder.style.fontWeight} ${canvasFontSize}px ${placeholder.style.fontFamily}`;
-          ctx.fillStyle = placeholder.style.fontColor;
-          ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
-          
-          let x = placeholder.position.x;
-          if (placeholder.style.textAlign === 'right') {
-            // For right alignment, x is already at the right edge
-            ctx.textAlign = 'right';
-          } else if (placeholder.style.textAlign === 'center') {
-            ctx.textAlign = 'center';
-          } else {
-            // For left alignment, x is already at the left edge
-            ctx.textAlign = 'left';
+      await Promise.all(
+        (template.placeholders as any[])?.map(async (placeholder: any) => {
+          const value = record[placeholder.name];
+          if (value) {
+            let fontFamily = placeholder.style.fontFamily || 'Arial';
+
+            // Apply text styles with logging
+            ctx.textBaseline = 'middle';
+            const fontString = `${placeholder.style.fontWeight} ${placeholder.style.fontSize}px ${fontFamily}`;
+            ctx.font = fontString;
+            console.log(`Applied font string: ${fontString}`);
+
+            ctx.fillStyle = placeholder.style.fontColor;
+            ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
+
+            // Draw the text
+            ctx.fillText(value, placeholder.position.x, placeholder.position.y);
           }
-          
-          ctx.fillText(value, x, placeholder.position.y);
-        }
-      });
+        })
+      );
+      
+      
+
 
       // Add signatures
       if (template.signatures) {
@@ -196,5 +324,6 @@ export async function POST(request: Request) {
     })
   );
 
+  cleanupTempFonts();
   return NextResponse.json(certificates);
 }

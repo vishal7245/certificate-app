@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,17 +24,51 @@ export function AddPlaceholderModal({ open, onOpenChange, onAdd }: AddPlaceholde
     fontSize: 30,
     fontColor: '#000000',
     fontWeight: 'normal',
-    textAlign: 'center'
+    textAlign: 'center',
+    customFontUrl: undefined,
   });
+  const [customFontFile, setCustomFontFile] = useState<File | null>(null);
+  const [isUsingCustomFont, setIsUsingCustomFont] = useState(false);
+
+  const handleFontUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('font', file);
+
+      const response = await fetch('/api/upload-font', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Font upload failed');
+
+      const { fontUrl } = await response.json();
+      setStyle((prev) => ({
+        ...prev,
+        fontFamily: file.name.split('.')[0],
+        customFontUrl: fontUrl, // Save the custom font URL
+      }));
+      setCustomFontFile(file);
+      setIsUsingCustomFont(true);
+    } catch (error) {
+      console.error('Error uploading font:', error);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onAdd(name.trim(), style);
+      onAdd(name.trim(), style); 
       setName('');
+      setCustomFontFile(null);
+      setIsUsingCustomFont(false);
       onOpenChange(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,23 +88,58 @@ export function AddPlaceholderModal({ open, onOpenChange, onAdd }: AddPlaceholde
             />
           </div>
 
+          {/* Font selection */}
           <div className="space-y-2">
-            <Label htmlFor="font-family">Font Family</Label>
+            <Label htmlFor="font-type">Font Type</Label>
             <Select
-              value={style.fontFamily}
-              onValueChange={(value) => setStyle(prev => ({ ...prev, fontFamily: value }))}
+              value={isUsingCustomFont ? 'custom' : 'system'}
+              onValueChange={(value) => setIsUsingCustomFont(value === 'custom')}
             >
-              <SelectTrigger id="font-family">
-                <SelectValue placeholder="Select font family" />
+              <SelectTrigger id="font-type">
+                <SelectValue placeholder="Select font type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Arial">Arial</SelectItem>
-                <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                <SelectItem value="Helvetica">Helvetica</SelectItem>
-                <SelectItem value="Courier">Courier</SelectItem>
+                <SelectItem value="system">System Font</SelectItem>
+                <SelectItem value="custom">Custom Font</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {isUsingCustomFont ? (
+            <div className="space-y-2">
+              <Label htmlFor="custom-font">Upload Custom Font</Label>
+              <Input
+                id="custom-font"
+                type="file"
+                accept=".ttf,.otf,.woff,.woff2"
+                onChange={handleFontUpload}
+                className="cursor-pointer"
+              />
+              {customFontFile && (
+                <p className="text-sm text-gray-500">
+                  Selected font: {customFontFile.name}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="font-family">Font Family</Label>
+              <Select
+                value={style.fontFamily}
+                onValueChange={(value) => setStyle(prev => ({ ...prev, fontFamily: value }))}
+              >
+                <SelectTrigger id="font-family">
+                  <SelectValue placeholder="Select font family" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Arial">Arial</SelectItem>
+                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                  <SelectItem value="Helvetica">Helvetica</SelectItem>
+                  <SelectItem value="Courier">Courier</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="font-size">Font Size</Label>
