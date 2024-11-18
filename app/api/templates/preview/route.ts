@@ -64,6 +64,7 @@ export async function POST(request: Request) {
 
           ctx.textBaseline = 'middle'; 
           ctx.font = `${placeholder.style.fontWeight} ${canvasFontSize}px ${placeholder.style.fontFamily}`;
+          console.log(`${ctx.font}`)
           ctx.fillStyle = placeholder.style.fontColor;
           ctx.textAlign = placeholder.style.textAlign as CanvasTextAlign;
 
