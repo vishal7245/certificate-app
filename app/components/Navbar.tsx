@@ -68,6 +68,14 @@ export function Navbar() {
               >
                 Generate
               </Link>
+              <Link
+                href="/email"
+                className={
+                  currentPath === '/email' ? activeClassName : inactiveClassName
+                }
+              >
+                Email
+              </Link>
             </div>
           </div>
 
@@ -147,6 +155,14 @@ export function Navbar() {
             }
           >
             Generate
+          </Link>
+          <Link
+            href="/email"
+            className={
+              currentPath === '/email' ? mobileActiveClassName : mobileInactiveClassName
+            }
+          >
+            Email
           </Link>
           <button
             onClick={handleLogout}

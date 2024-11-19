@@ -167,6 +167,11 @@ export async function POST(request: Request) {
         },
       });
 
+
+      const emailConfig = await prisma.emailConfig.findUnique({ where: { userId } });
+      const emailSubject = emailConfig?.defaultSubject || 'Your Certificate';
+      const emailMessage = emailConfig?.defaultMessage || 'Please find your certificate attached.';
+
       // Send email
       const email = record['Email'];
       if (email) {
@@ -174,9 +179,9 @@ export async function POST(request: Request) {
           const mailOptions = {
             from: process.env.EMAIL_FROM,
             to: email,
-            subject: 'Your Certificate',
-            text: 'Please find your certificate attached.',
-            html: '<p>Please find your certificate attached.</p>',
+            subject: emailSubject, 
+            text: emailMessage,    
+            html: `<p>${emailMessage}</p>`, 
             attachments: [
               {
                 filename: 'certificate.png',
@@ -191,6 +196,7 @@ export async function POST(request: Request) {
           console.error(`Failed to send email to ${email}:`, emailError);
         }
       }
+
 
       return certificate;
     })

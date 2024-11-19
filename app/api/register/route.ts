@@ -12,13 +12,22 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await prisma.user.create({
+
+    const newUser = await prisma.user.create({
       data: {
         name,
         email,
         organization,
         phone,
         password: hashedPassword,
+      },
+    });
+
+    await prisma.emailConfig.create({
+      data: {
+        userId: newUser.id, 
+        defaultSubject: "Your Certificate",
+        defaultMessage: "Please find your certificate attached.",
       },
     });
 

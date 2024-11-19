@@ -18,6 +18,7 @@ model User {
   resetTokenExpiry DateTime?
   templates        Template[]
   certificates     Certificate[]
+  emailConfig      EmailConfig?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -26,10 +27,10 @@ model Template {
   id           String        @id @default(cuid())
   name         String
   imageUrl     String
-  width        Int          
-  height       Int          
+  width        Int
+  height       Int
   placeholders Json
-  signatures   Json       
+  signatures   Json
   creatorId    String
   creator      User          @relation(fields: [creatorId], references: [id])
   certificates Certificate[]
@@ -37,15 +38,24 @@ model Template {
   updatedAt    DateTime      @updatedAt
 }
 
-
 model Certificate {
-  id                String     @id @default(cuid())
-  templateId        String?    // Made optional to allow null
-  template          Template?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  uniqueIdentifier  String     @unique
+  id                String    @id @default(cuid())
+  templateId        String? // Made optional to allow null
+  template          Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  uniqueIdentifier  String    @unique
   data              Json
   generatedImageUrl String
   creatorId         String
-  creator           User       @relation(fields: [creatorId], references: [id])
-  createdAt         DateTime   @default(now())
+  creator           User      @relation(fields: [creatorId], references: [id])
+  createdAt         DateTime  @default(now())
+}
+
+model EmailConfig {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  defaultSubject String   @default("Your Certificate")
+  defaultMessage String   @default("Please find your certificate attached.")
+  user           User     @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
