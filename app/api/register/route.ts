@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         defaultSubject: "Your Certificate",
         defaultMessage: "Please find your certificate attached.",
         emailHeading: "Congratulations on receiving your certificate!",
-        logoUrl: "https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/type/acme.png"
+        logoUrl: "https://pub-e63b17b4d990438a83af58c15949f8a2.r2.dev/type/acme.png",
         supportEmail: "support@example.com",
       },
     });
