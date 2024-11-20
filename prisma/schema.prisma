@@ -55,6 +55,9 @@ model EmailConfig {
   userId         String   @unique
   defaultSubject String   @default("Your Certificate")
   defaultMessage String   @default("Please find your certificate attached.")
+  logoUrl        String?  
+  emailHeading   String   @default("Congratulations on receiving your certificate!") 
+  supportEmail   String?  @default("support@example.com")
   user           User     @relation(fields: [userId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

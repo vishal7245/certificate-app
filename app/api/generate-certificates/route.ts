@@ -43,6 +43,13 @@ function getUserIdFromRequest(request: Request): string | null {
   }
 }
 
+function replaceVariables(text: string, data: Record<string, string>): string {
+  return text.replace(/<([^>]+)>/g, (match, variable) => {
+    const cleanVariable = variable.trim();
+    return data[cleanVariable] || match;
+  });
+}
+
 export async function POST(request: Request) {
   const userId = getUserIdFromRequest(request);
   if (!userId) {
@@ -167,28 +174,49 @@ export async function POST(request: Request) {
         },
       });
 
-
       const emailConfig = await prisma.emailConfig.findUnique({ where: { userId } });
-      const emailSubject = emailConfig?.defaultSubject || 'Your Certificate';
-      const emailMessage = emailConfig?.defaultMessage || 'Please find your certificate attached.';
+      const emailSubject = replaceVariables(emailConfig?.defaultSubject || 'Your Certificate', record);
+      const emailMessage = replaceVariables(emailConfig?.defaultMessage || 'Please find your certificate attached.', record);
+      const emailHeading = replaceVariables(emailConfig?.emailHeading || 'Congratulations on receiving your certificate!', record);
 
-      // Send email
+      const htmlContent = `
+      <div style="background-color: #f0f4f8; padding: 100px 0;">
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #d0d7de; border-radius: 10px; padding: 20px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${emailConfig?.logoUrl}" alt="Certifier Logo" style="height: 50px;" />
+          </div>
+          <h1 style="font-size: 24px; text-align: center; margin: 0 0 20px 0; color: #004085;">
+            ${emailHeading}
+          </h1>
+          <p style="font-size: 16px; color: #555; text-align: center;">
+            ${emailMessage}
+          </p>
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${certificate.generatedImageUrl}" style="background-color: #007BFF; color: #fff; padding: 10px 20px; font-size: 16px; text-decoration: none; border-radius: 5px;">
+              Download Certificate
+            </a>
+          </div>
+          <footer style="margin-top: 30px; text-align: center; font-size: 14px; color: #777;">
+            <p>
+              Having trouble with your certificate? Contact us at
+              <a href="mailto:${emailConfig?.supportEmail}" style="color: #007BFF; text-decoration: none;">
+                ${emailConfig?.supportEmail}
+              </a>
+            </p>
+          </footer>
+        </div>
+      </div>
+    `;
+
       const email = record['Email'];
       if (email) {
         try {
           const mailOptions = {
             from: process.env.EMAIL_FROM,
             to: email,
-            subject: emailSubject, 
-            text: emailMessage,    
-            html: `<p>${emailMessage}</p>`, 
-            attachments: [
-              {
-                filename: 'certificate.png',
-                content: buffer,
-                contentType: 'image/png',
-              },
-            ],
+            subject: emailSubject,
+            text: emailMessage,
+            html: htmlContent,
           };
 
           await transporter.sendMail(mailOptions);

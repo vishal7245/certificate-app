@@ -52,17 +52,23 @@ export async function GET(request: Request) {
 
 // Update email config
 export async function PUT(request: Request) {
-  const userId = getUserIdFromRequest(request);
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = getUserIdFromRequest(request);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  
+    const { defaultSubject, defaultMessage, logoUrl, emailHeading, supportEmail } = await request.json();
+  
+    const updatedEmailConfig = await prisma.emailConfig.update({
+      where: { userId },
+      data: { 
+        defaultSubject, 
+        defaultMessage,
+        logoUrl,
+        emailHeading,
+        supportEmail
+      },
+    });
+  
+    return NextResponse.json(updatedEmailConfig);
   }
-
-  const { defaultSubject, defaultMessage } = await request.json();
-
-  const updatedEmailConfig = await prisma.emailConfig.update({
-    where: { userId },
-    data: { defaultSubject, defaultMessage },
-  });
-
-  return NextResponse.json(updatedEmailConfig);
-}

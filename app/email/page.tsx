@@ -1,5 +1,5 @@
 import { Navbar } from '@/app/components/Navbar';
-import { EmailConfigForm } from '@/app/components/EmailConfigForm';
+import EmailConfigForm from '@/app/components/EmailConfigForm';
 
 export default function EmailConfigPage() {
   return (
