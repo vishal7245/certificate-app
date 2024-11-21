@@ -19,6 +19,7 @@ model User {
   templates        Template[]
   certificates     Certificate[]
   emailConfig      EmailConfig?
+  is_admin         Boolean       @default(false)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }

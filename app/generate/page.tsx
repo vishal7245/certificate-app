@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Template } from '@/app/types';
 import { Navbar } from '@/app/components/Navbar';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
+import { LoadingOverlay } from '@/app/components/LoadingOverlay';
 
 
 
@@ -18,6 +19,8 @@ export default function GeneratePage() {
   const [dialogMessage, setDialogMessage] = useState<string | null>(null); // To store dialog message
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [ccEmails, setCcEmails] = useState<string>('');
+
 
 
   // Check if the user is authenticated
@@ -70,6 +73,7 @@ export default function GeneratePage() {
         const formData = new FormData();
         formData.append('csv', csvFile);
         formData.append('templateId', selectedTemplate.id);
+        formData.append('ccEmails', ccEmails);
   
         const response = await fetch('/api/generate-certificates', {
           method: 'POST',
@@ -101,7 +105,7 @@ export default function GeneratePage() {
             <h1 className="text-2xl font-semibold text-gray-900">Generate Certificates</h1>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Template
             </label>
@@ -110,7 +114,7 @@ export default function GeneratePage() {
                 const template = templates.find((t) => t.id === e.target.value);
                 setSelectedTemplate(template || null);
               }}
-              className="w-full p-2 border border-gray-300 text-black rounded mb-4"
+              className="w-full p-2 border border-gray-300 text-black rounded mb-1 focus:outline-1 focus:outline-blue-500"
             >
               <option value="">Select Template</option>
               {templates.map((template) => (
@@ -119,6 +123,22 @@ export default function GeneratePage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              CC Emails (Optional)
+            </label>
+            <input
+              type="text"
+              value={ccEmails}
+              onChange={(e) => setCcEmails(e.target.value)}
+              placeholder="Enter email addresses separated by commas"
+              className="w-full p-2 border border-gray-300 text-black rounded mb-4 focus:outline-1 focus:outline-blue-500"
+            />
+            <p className="text-sm text-gray-600 mt-1">
+              Optional: Add CC email addresses separated by commas
+            </p>
           </div>
 
           <div className="mb-6">
@@ -151,13 +171,7 @@ export default function GeneratePage() {
             </button>
           </div>
         </div>
-        {isLoading && (
-          <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center">
-            <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-white" role="status">
-              <span className="sr-only">Loading...</span>
-            </div>
-          </div>
-        )}
+        {isLoading && <LoadingOverlay />}
       </main>
 
       {/* Dialog for feedback messages */}

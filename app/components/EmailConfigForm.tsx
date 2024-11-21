@@ -196,7 +196,7 @@ export default function EmailConfigForm() {
           onChange={(e) =>
             setEmailConfig((prev) => ({ ...prev, emailHeading: e.target.value }))
           }
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
           placeholder="Enter email heading"
         />
       </div>
@@ -211,7 +211,7 @@ export default function EmailConfigForm() {
           onChange={(e) =>
             setEmailConfig((prev) => ({ ...prev, supportEmail: e.target.value }))
           }
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
         />
       </div>
 
@@ -225,7 +225,7 @@ export default function EmailConfigForm() {
           onChange={(e) =>
             setEmailConfig((prev) => ({ ...prev, defaultSubject: e.target.value }))
           }
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
         />
       </div>
 
@@ -239,7 +239,7 @@ export default function EmailConfigForm() {
             onChange={(e) =>
               setEmailConfig((prev) => ({ ...prev, defaultMessage: e.target.value }))
             }
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
             rows={5}
             placeholder="Enter your message. Use <VariableName> to insert dynamic content (e.g., Dear <Name>)"
           />

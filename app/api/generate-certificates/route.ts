@@ -59,6 +59,9 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const csvFile = formData.get('csv');
   const templateId = formData.get('templateId') as string;
+  const ccEmails = (formData.get('ccEmails') as string || '').split(',')
+    .map(email => email.trim())
+    .filter(email => email);
 
   if (!csvFile) {
     return NextResponse.json({ error: 'No CSV file provided' }, { status: 400 });
@@ -214,6 +217,7 @@ export async function POST(request: Request) {
           const mailOptions = {
             from: process.env.EMAIL_FROM,
             to: email,
+            cc: ccEmails,
             subject: emailSubject,
             text: emailMessage,
             html: htmlContent,

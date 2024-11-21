@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 export async function POST(request: Request) {
   try {
     const { name, email, organization, phone, password } = await request.json();
+    const adminEmail = process.env.ADMIN_EMAIL;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
         organization,
         phone,
         password: hashedPassword,
+        is_admin: email === adminEmail, 
       },
     });
 
