@@ -1,7 +1,6 @@
 const { exec } = require("child_process");
 
 const installFonts = () => {
-    // Using apt-get for Ubuntu
     const command = "yes | apt-get install -y fonts-liberation ttf-mscorefonts-installer";
     exec(command, (error, stdout, stderr) => {
         if (error) {
