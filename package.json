@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "update-admin": "node prisma/scripts/update-admin.ts"
+    "update-admin": "node prisma/scripts/update-admin.ts",
+    "font-install": "node app/scripts/font-install.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.688.0",

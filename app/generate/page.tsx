@@ -136,9 +136,6 @@ export default function GeneratePage() {
               placeholder="Enter email addresses separated by commas"
               className="w-full p-2 border border-gray-300 text-black rounded mb-4 focus:outline-1 focus:outline-blue-500"
             />
-            <p className="text-sm text-gray-600 mt-1">
-              Optional: Add CC email addresses separated by commas
-            </p>
           </div>
 
           <div className="mb-6">
