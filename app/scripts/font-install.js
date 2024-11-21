@@ -1,7 +1,8 @@
 const { exec } = require("child_process");
 
 const installFonts = () => {
-    const command = "sudo apt update && sudo apt upgrade && yes | sudo apt-get install -y fonts-liberation ttf-mscorefonts-installer";
+    // Using apk for Alpine Linux
+    const command = "apk add --no-cache fontconfig msttcorefonts-installer && update-ms-fonts";
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error occurred: ${error.message}`);
