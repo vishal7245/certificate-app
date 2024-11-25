@@ -17,12 +17,16 @@ export default function LoginPage() {
       body: JSON.stringify(formData),
       headers: { 'Content-Type': 'application/json' },
     });
+    
+    const data = await res.json();
+    
     if (res.ok) {
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(data.user));
       router.push('/templates');
     } else {
-      const errorData = await res.json();
-      alert(errorData.error || 'Login failed');
-    }
+      alert(data.error || 'Login failed');
+    };
   };
 
   return (

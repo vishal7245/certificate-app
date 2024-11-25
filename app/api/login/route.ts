@@ -17,7 +17,13 @@ export async function POST(request: Request) {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
     const response = NextResponse.json({ 
       message: 'Login successful',
-      is_admin: user.is_admin 
+      is_admin: user.is_admin,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        is_admin: user.is_admin
+      }
     });
     response.cookies.set('token', token, { httpOnly: true, maxAge: 604800 });
 

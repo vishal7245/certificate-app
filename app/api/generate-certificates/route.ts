@@ -73,6 +73,30 @@ export async function POST(request: Request) {
 
   const csvText = await csvFile.text();
   const records = parse(csvText, { columns: true });
+  const tokensNeeded = records.length;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { tokens: true }
+  });
+
+  if (!user || user.tokens < tokensNeeded) {
+    return NextResponse.json({ 
+      error: 'Insufficient tokens', 
+      required: tokensNeeded,
+      available: user?.tokens ?? 0 
+    }, { status: 400 });
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      tokens: {
+        decrement: tokensNeeded
+      }
+    }
+  });
+
 
   const template = await prisma.template.findUnique({ where: { id: templateId } });
   if (!template || template.creatorId !== userId) {
@@ -222,7 +246,6 @@ export async function POST(request: Request) {
             text: emailMessage,
             html: htmlContent,
           };
-
           await transporter.sendMail(mailOptions);
         } catch (emailError) {
           console.error(`Failed to send email to ${email}:`, emailError);

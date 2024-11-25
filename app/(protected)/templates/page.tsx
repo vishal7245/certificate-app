@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Navbar } from '../components/Navbar';
-import { Template } from '../types';
+import { Template } from '@/app/types';
 
 export default function TemplatesPage() {
   const [user, setUser] = useState<any>(null);
@@ -53,8 +52,7 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Navbar />
+    
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
@@ -99,6 +97,6 @@ export default function TemplatesPage() {
           )}
         </div>
       </main>
-    </div>
+    
   );
 }

@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { AddSignatureModal } from "@/app/components/AddSignatureModal";
 import TemplatePreviewModal from "@/app/components/TemplatePreviewModal";
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
-import { use } from 'react';
 
 interface EditTemplatePageProps {
   params: Promise<{ id: string }>
@@ -41,6 +40,19 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    // Check if the user is authenticated
+    fetch('/api/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) {
+          router.push('/login');
+        } else {
+          setUser(data);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     const fetchTemplate = async () => {
@@ -235,8 +247,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gray-100 flex flex-col">
-        <Navbar />
+      
         <main className="flex-grow w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="container mx-auto">
             <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center mb-6">
@@ -387,7 +398,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
           onOpenChange={setIsDialogOpen}
           message={dialogMessage}
         />
-      </div>
+      
     </DndProvider>
   );
 }

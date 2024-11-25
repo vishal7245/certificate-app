@@ -32,5 +32,5 @@ export async function uploadToS3(
     Key: key,
   });
 
-  return await getSignedUrl(s3Client, getCommand, { expiresIn: 604800 }); // Expires in 7 days
+  return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TemplateCanvas } from "@/app/components/TemplateCanvas";
@@ -42,7 +42,20 @@ export default function TemplatesPageNew() {
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState<string | null>(null); // To store dialog message
+  const [user, setUser] = useState<any>(null);
   
+  useEffect(() => {
+    // Check if the user is authenticated
+    fetch('/api/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) {
+          router.push('/login');
+        } else {
+          setUser(data);
+        }
+      });
+  }, []);
 
   // Add signature deletion handler
   const handleSignatureDelete = (id: string) => {
@@ -214,8 +227,7 @@ export default function TemplatesPageNew() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gray-100 flex flex-col">
-        <Navbar />
+      
         <main className="flex-grow w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="container mx-auto">
             <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center mb-6">
@@ -366,7 +378,7 @@ export default function TemplatesPageNew() {
           onOpenChange={setIsDialogOpen}
           message={dialogMessage}
         />
-      </div>
+      
     </DndProvider>
   );
 }
