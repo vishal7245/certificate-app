@@ -65,18 +65,21 @@ export default function GeneratePage() {
         formData.append('csv', csvFile);
         formData.append('templateId', selectedTemplate.id);
         formData.append('ccEmails', ccEmails);
-  
-        const response = await fetch('/api/generate-certificates', {
+         const response = await fetch('/api/generate-certificates', {
           method: 'POST',
           body: formData,
         });
-  
-        if (!response.ok) {
-          throw new Error('Failed to generate certificates');
+         const data = await response.json();
+         if (!response.ok) {
+          if (data.error === 'Insufficient tokens') {
+            setDialogMessage(`Insufficient tokens. You need ${data.required} tokens but have ${data.available} available.`);
+          } else {
+            throw new Error(data.error || 'Failed to generate certificates');
+          }
+        } else {
+          setDialogMessage('Certificates generated successfully!');
         }
-  
-        setDialogMessage('Certificates generated successfully!');
-        setIsDialogOpen(true); // Open the dialog
+        setIsDialogOpen(true);
       }
     } catch (error) {
       console.error('Error generating certificates:', error);
