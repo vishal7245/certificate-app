@@ -53,6 +53,16 @@ export async function POST(request: Request) {
 
   const { email, amount } = await request.json();
 
+  const transaction = await prisma.tokenTransaction.create({
+    data: {
+      userId,
+      amount,
+      type: 'ADD',
+      reason: 'admin_add',
+      email
+    }
+  });
+
   const updatedUser = await prisma.user.update({
     where: { email },
     data: {

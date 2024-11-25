@@ -77,7 +77,10 @@ export async function POST(request: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { tokens: true }
+    select: { 
+      tokens: true,
+      email: true
+     }
   });
 
   if (!user || user.tokens < tokensNeeded) {
@@ -88,13 +91,29 @@ export async function POST(request: Request) {
     }, { status: 400 });
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      tokens: {
-        decrement: tokensNeeded
+  const { updatedUser } = await prisma.$transaction(async (prisma) => {
+    // Deduct tokens
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        tokens: {
+          decrement: tokensNeeded
+        }
       }
-    }
+    });
+
+    // Create transaction record
+    await prisma.tokenTransaction.create({
+      data: {
+        userId,
+        amount: tokensNeeded,
+        type: 'DEDUCT',
+        reason: 'certificate_generation',
+        email: user.email, 
+      }
+    });
+
+    return { updatedUser };
   });
 
 
@@ -209,9 +228,11 @@ export async function POST(request: Request) {
       const htmlContent = `
       <div style="background-color: #f0f4f8; padding: 100px 0;">
         <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #d0d7de; border-radius: 10px; padding: 20px; background-color: #ffffff;">
+          ${emailConfig?.logoUrl ? `
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="${emailConfig?.logoUrl}" alt="Certifier Logo" style="height: 50px;" />
+            <img src="${emailConfig.logoUrl}" alt="Certifier Logo" style="height: 50px;" />
           </div>
+          ` : ''}
           <h1 style="font-size: 24px; text-align: center; margin: 0 0 20px 0; color: #004085;">
             ${emailHeading}
           </h1>

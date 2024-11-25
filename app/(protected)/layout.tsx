@@ -9,7 +9,9 @@ export default function RootLayout({
     return (
         <div className="min-h-screen bg-gray-100">
            <Navbar/>
+           <div className="pt-16">
            {children}
+           </div>
        </div>
     )
   }
