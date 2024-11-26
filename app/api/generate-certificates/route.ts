@@ -57,6 +57,7 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
+  const batchName = formData.get('batchName') as string;
   const csvFile = formData.get('csv');
   const templateId = formData.get('templateId') as string;
   const ccEmails = (formData.get('ccEmails') as string || '').split(',')
@@ -65,6 +66,10 @@ export async function POST(request: Request) {
 
   if (!csvFile) {
     return NextResponse.json({ error: 'No CSV file provided' }, { status: 400 });
+  }
+
+  if (!batchName) {
+    return NextResponse.json({ error: 'Batch name is required' }, { status: 400 });
   }
 
   if (!isFileLike(csvFile)) {
@@ -91,7 +96,7 @@ export async function POST(request: Request) {
     }, { status: 400 });
   }
 
-  const { updatedUser } = await prisma.$transaction(async (prisma) => {
+  const { updatedUser, batch } = await prisma.$transaction(async (prisma) => {
     // Deduct tokens
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -99,6 +104,13 @@ export async function POST(request: Request) {
         tokens: {
           decrement: tokensNeeded
         }
+      }
+    });
+
+    const batch = await prisma.batch.create({
+      data: {
+        name: batchName,
+        creatorId: userId,
       }
     });
 
@@ -113,7 +125,7 @@ export async function POST(request: Request) {
       }
     });
 
-    return { updatedUser };
+    return { updatedUser, batch };
   });
 
 
@@ -213,6 +225,7 @@ export async function POST(request: Request) {
       const certificate = await prisma.certificate.create({
         data: {
           templateId,
+          batchId: batch.id,
           uniqueIdentifier: `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           data: record,
           generatedImageUrl: certificateUrl,
@@ -278,5 +291,5 @@ export async function POST(request: Request) {
     })
   );
 
-  return NextResponse.json(certificates);
+  return NextResponse.json({ certificates, batchId: batch.id });
 }

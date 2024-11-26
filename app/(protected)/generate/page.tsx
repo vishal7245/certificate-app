@@ -7,6 +7,7 @@ import { Navbar } from '@/app/components/Navbar';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
 import { LoadingOverlay } from '@/app/components/LoadingOverlay';
 import { UserTokenHistory } from '@/app/components/UserTokenHistory';
+import { BatchList } from '@/app/components/BatchList';
 
 export default function GeneratePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -18,6 +19,7 @@ export default function GeneratePage() {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [ccEmails, setCcEmails] = useState<string>('');
+  const [batchName, setBatchName] = useState('');
 
   // Check if the user is authenticated
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function GeneratePage() {
         formData.append('csv', csvFile);
         formData.append('templateId', selectedTemplate.id);
         formData.append('ccEmails', ccEmails);
+        formData.append('batchName', batchName);
          const response = await fetch('/api/generate-certificates', {
           method: 'POST',
           body: formData,
@@ -96,6 +99,19 @@ export default function GeneratePage() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Generate Certificates</h1>
           </div>
+          <div className="mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Batch Name
+          </label>
+          <input
+            type="text"
+            value={batchName}
+            onChange={(e) => setBatchName(e.target.value)}
+            placeholder="Enter a name for this batch of certificates"
+            required
+            className="w-full p-2 border border-gray-300 text-black rounded mb-4 focus:outline-1 focus:outline-blue-500"
+          />
+        </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Template
@@ -156,6 +172,9 @@ export default function GeneratePage() {
             </button>
           </div>
           <div className='my-10'>
+          <BatchList />
+          </div>
+          <div className='my-10'>
             <UserTokenHistory />
           </div>
         </div>
@@ -167,7 +186,5 @@ export default function GeneratePage() {
           message={dialogMessage}
         />
       </main>
-      
-    
   );
 }

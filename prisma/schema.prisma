@@ -7,6 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Batch {
+  id           String        @id @default(cuid())
+  name         String
+  creatorId    String
+  creator      User          @relation(fields: [creatorId], references: [id])
+  certificates Certificate[]
+  createdAt    DateTime      @default(now())
+}
+
 model TokenTransaction {
   id        String   @id @default(cuid())
   userId    String
@@ -29,6 +38,7 @@ model User {
   resetTokenExpiry DateTime?
   templates        Template[]
   certificates     Certificate[]
+  batches          Batch[]
   transactions     TokenTransaction[]
   emailConfig      EmailConfig?
   tokens           Int           @default(100)
@@ -56,6 +66,8 @@ model Certificate {
   id                String    @id @default(cuid())
   templateId        String? // Made optional to allow null
   template          Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  batchId           String?
+  batch             Batch?    @relation(fields: [batchId], references: [id])
   uniqueIdentifier  String    @unique
   data              Json
   generatedImageUrl String
