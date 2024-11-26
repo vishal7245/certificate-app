@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-export function getUserIdFromRequest(request: Request): string | null {
+function getUserIdFromRequest(request: Request): string | null {
   const token = request.headers
     .get('cookie')
     ?.split('; ')
