@@ -77,6 +77,11 @@ export function Navbar() {
     };
   };
 
+
+  const handleMobileLinkClick = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
     <nav className="bg-white shadow-sm fixed top-0 w-full z-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -112,6 +117,14 @@ export function Navbar() {
                 }
               >
                 Email
+              </Link>
+              <Link
+                href="/analytics"
+                className={
+                  currentPath === '/analytics' ? activeClassName : inactiveClassName
+                }
+              >
+                Analytics
               </Link>
               {isAdmin && (
                 <Link
@@ -197,6 +210,7 @@ export function Navbar() {
           </div>
           <Link
             href="/templates"
+            onClick={handleMobileLinkClick}
             className={
               currentPath === '/templates' ? mobileActiveClassName : mobileInactiveClassName
             }
@@ -205,6 +219,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/generate"
+            onClick={handleMobileLinkClick}
             className={
               currentPath === '/generate' ? mobileActiveClassName : mobileInactiveClassName
             }
@@ -213,15 +228,26 @@ export function Navbar() {
           </Link>
           <Link
             href="/email"
+            onClick={handleMobileLinkClick}
             className={
               currentPath === '/email' ? mobileActiveClassName : mobileInactiveClassName
             }
           >
             Email
           </Link>
+          <Link
+            href="/analytics"
+            onClick={handleMobileLinkClick}
+            className={
+              currentPath === '/analytics' ? mobileActiveClassName : mobileInactiveClassName
+            }
+          >
+            Analytics
+          </Link>
           {isAdmin && (
             <Link
               href="/dashboard"
+              onClick={handleMobileLinkClick}
               className={
                 currentPath === '/dashboard' ? mobileActiveClassName : mobileInactiveClassName
               }

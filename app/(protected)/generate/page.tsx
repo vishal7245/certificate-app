@@ -171,12 +171,6 @@ export default function GeneratePage() {
               {isLoading ? 'Generating...' : 'Generate Certificates'}
             </button>
           </div>
-          <div className='my-10'>
-          <BatchList />
-          </div>
-          <div className='my-10'>
-            <UserTokenHistory />
-          </div>
         </div>
         {isLoading && <LoadingOverlay />}
         {/* Dialog for feedback messages */}

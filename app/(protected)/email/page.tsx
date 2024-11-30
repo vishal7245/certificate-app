@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import EmailConfigForm from '@/app/components/EmailConfigForm';
+import DomainConfigForm from '@/app/components/DomainConfigForm';
 
 
 export default function EmailConfigPage() {
@@ -64,6 +65,7 @@ export default function EmailConfigPage() {
      <div className="px-4 py-6 sm:px-0">
        <h1 className="text-2xl font-semibold text-gray-900 mb-6">Email Settings</h1>
        <EmailConfigForm />
+       <DomainConfigForm />
      </div>
    </main>
  );

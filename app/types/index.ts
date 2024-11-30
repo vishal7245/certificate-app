@@ -4,6 +4,15 @@ export type Position = {
     y: number;
   };
   
+export interface EmailConfig {
+    customDomain?: string | null;
+    customEmail?: string | null;
+    isVerified?: boolean;
+    defaultSubject: string;
+    defaultMessage: string;
+    emailHeading: string;
+    supportEmail?: string | null;
+  }
 
 // Test
 export interface PlaceholderStyle {

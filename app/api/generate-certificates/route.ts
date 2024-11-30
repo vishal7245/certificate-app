@@ -7,6 +7,7 @@ import { uploadToS3 } from '@/app/lib/s3';
 import { createCanvas, loadImage } from 'canvas';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
+import { EmailConfig } from '@/app/types';
 
 interface FileLike {
   arrayBuffer: () => Promise<ArrayBuffer>;
@@ -75,6 +76,24 @@ export async function POST(request: Request) {
   if (!isFileLike(csvFile)) {
     return NextResponse.json({ error: 'Invalid CSV file' }, { status: 400 });
   }
+
+  const emailConfig = await prisma.emailConfig.findUnique({
+    where: { userId },
+    select: {
+      customDomain: true,
+      customEmail: true,
+      isVerified: true,
+      defaultSubject: true,
+      defaultMessage: true,
+      emailHeading: true,
+      supportEmail: true,
+    }
+  });
+
+  const emailFrom = emailConfig?.customEmail
+    ? emailConfig.customEmail
+    : process.env.EMAIL_FROM;
+
 
   const csvText = await csvFile.text();
   const records = parse(csvText, { columns: true });
@@ -273,7 +292,7 @@ export async function POST(request: Request) {
       if (email) {
         try {
           const mailOptions = {
-            from: process.env.EMAIL_FROM,
+            from: emailFrom,
             to: email,
             cc: ccEmails,
             subject: emailSubject,
@@ -281,10 +300,12 @@ export async function POST(request: Request) {
             html: htmlContent,
           };
           await transporter.sendMail(mailOptions);
+          console.log(`${emailFrom}`);
         } catch (emailError) {
           console.error(`Failed to send email to ${email}:`, emailError);
         }
       }
+      
 
 
       return certificate;

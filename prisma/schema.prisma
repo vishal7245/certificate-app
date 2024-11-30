@@ -87,4 +87,8 @@ model EmailConfig {
   user           User     @relation(fields: [userId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  customDomain   String?
+  customEmail    String?
+  isVerified     Boolean  @default(false)
+  dkimRecords    Json?    
 }

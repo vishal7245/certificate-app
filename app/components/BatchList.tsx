@@ -235,14 +235,14 @@ export function BatchList() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[90vw]">
           <DialogHeader>
             <DialogTitle>
               {selectedBatch?.name} - Certificates
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4">
+          <div className="mt-4 overflow-x-auto">
           {isCertificatesLoading ? ( // Use the new loading state for certificates
               <div className="animate-pulse">
                 <div className="space-y-3">
@@ -252,6 +252,7 @@ export function BatchList() {
                 </div>
               </div>
             ) : (
+              <div className="min-w-full">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -295,6 +296,7 @@ export function BatchList() {
                     ))}
                   </tbody>
                 </table>
+              </div>
             )}
 
             {certPagination && certificates.length > 0 && (
