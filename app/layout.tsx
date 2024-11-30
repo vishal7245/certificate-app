@@ -5,8 +5,8 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Certificate Generator',
-  description: 'Generate certificates with customizable templates',
+  title: 'Send Certificates',
+  description: 'Send certificates with customizable templates',
 }
 
 export default function RootLayout({
