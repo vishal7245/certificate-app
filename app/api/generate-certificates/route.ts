@@ -83,7 +83,7 @@ const emailWorker = new Worker('emailQueue',
   {
     connection,
     limiter: {
-      max: 5, // 5 emails per second
+      max: process.env.EMAIL_LIMIT ? parseInt(process.env.EMAIL_LIMIT) : 10, 
       duration: 1000,
     },
   }
