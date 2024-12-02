@@ -7,7 +7,8 @@ import { uploadToS3 } from '@/app/lib/s3';
 import { createCanvas, loadImage } from 'canvas';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
-import { EmailConfig } from '@/app/types';
+import { Queue, Worker } from 'bullmq';
+import IORedis from 'ioredis';
 
 interface FileLike {
   arrayBuffer: () => Promise<ArrayBuffer>;
@@ -16,6 +17,98 @@ interface FileLike {
   size?: number;
   type?: string;
 }
+
+if (!process.env.REDIS_URL) {
+  throw new Error('REDIS_URL is not defined in environment variables');
+}
+
+// Create Redis connection with error handling
+const connection = new IORedis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+  retryStrategy(times) {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  }
+});
+
+connection.on('error', (error) => {
+  console.error('Redis connection error:', error);
+});
+
+connection.on('connect', () => {
+  console.log('Successfully connected to Redis');
+});
+
+const emailQueue = new Queue('emailQueue', { 
+  connection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 1000,
+    },
+  },
+});
+
+const emailWorker = new Worker('emailQueue', 
+  async job => {
+    const { email, emailFrom, emailSubject, emailMessage, htmlContent, ccEmails } = job.data;
+    try {
+      const mailOptions = {
+        from: emailFrom,
+        to: email,
+        cc: ccEmails,
+        subject: emailSubject,
+        text: emailMessage,
+        html: htmlContent,
+      };
+      // Create transporter for sending email
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      await transporter.sendMail(mailOptions);
+      console.log(`Email sent to ${email}`);
+    } catch (emailError) {
+      console.error(`Failed to send email to ${email}:`, emailError);
+      throw emailError; // Rethrow to trigger retry mechanism
+    }
+  }, 
+  {
+    connection,
+    limiter: {
+      max: 5, // 5 emails per second
+      duration: 1000,
+    },
+  }
+);
+
+emailWorker.on('error', err => {
+  console.error('Worker error:', err);
+});
+
+emailWorker.on('failed', (job, err) => {
+  if (job) {
+    console.error(`Job ${job.id} failed with error:`, err);
+    console.log(`Attempt ${job.attemptsMade} of ${job.opts.attempts}`);
+  } else {
+    console.error('A job failed but job details are unavailable:', err);
+  }
+});
+
+emailWorker.on('completed', job => {
+  if (job) {
+    console.log(`Job ${job.id} completed successfully`);
+  } else {
+    console.log('A job completed but job details are unavailable');
+  }
+});
 
 function isFileLike(value: any): value is FileLike {
   return (
@@ -153,15 +246,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized access to template' }, { status: 403 });
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
 
   const certificates = await Promise.all(
     records.map(async (record: Record<string, string>) => {
@@ -288,23 +372,18 @@ export async function POST(request: Request) {
       </div>
     `;
 
-      const email = record['Email'];
-      if (email) {
-        try {
-          const mailOptions = {
-            from: emailFrom,
-            to: email,
-            cc: ccEmails,
-            subject: emailSubject,
-            text: emailMessage,
-            html: htmlContent,
-          };
-          await transporter.sendMail(mailOptions);
-          console.log(`${emailFrom}`);
-        } catch (emailError) {
-          console.error(`Failed to send email to ${email}:`, emailError);
-        }
-      }
+    const email = record['Email'];
+    if (email) {
+      // Add email sending task to the queue
+      await emailQueue.add('sendEmail', {
+        email,
+        emailFrom,
+        emailSubject,
+        emailMessage,
+        htmlContent,
+        ccEmails,
+      });
+    }
       
 
 
