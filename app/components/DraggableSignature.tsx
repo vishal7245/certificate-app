@@ -222,13 +222,6 @@ export function ResizableDraggableSignature({
           alt="Signature"
           className="w-full h-full object-contain pointer-events-none"
           onError={handleImageError}
-          onLoad={(e) => {
-            const img = e.target as HTMLImageElement;
-            onResize(signature.id, {
-              Width: img.naturalWidth,
-              Height: img.naturalHeight,
-            });
-          }}
         />
       )}
 

@@ -25,44 +25,67 @@ export function AddSignatureModal({ open, onOpenChange, onAdd }: Props) {
     setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
-
+  
     if (!file.type.startsWith("image/")) {
       setError("Please upload a valid image file.");
       return;
     }
-
+  
     if (file.size > 5 * 1024 * 1024) {
       setError("File size must be less than 5MB.");
       return;
     }
-
-    setUploading(true);
-
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      const response = await fetch("/api/upload-image", {
-        method: "POST",
-        body: formData,
+  
+    // Create a temporary URL for the image
+    const objectUrl = URL.createObjectURL(file);
+    
+    // Get image dimensions
+    const img = new Image();
+    img.onload = async () => {
+      console.log('Image loaded with dimensions:', {
+        width: img.naturalWidth,
+        height: img.naturalHeight
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to upload image:", errorText);
-        setError("Failed to upload image");
-        return;
+      
+      setWidth(img.naturalWidth);
+      setHeight(img.naturalHeight);
+      
+      // Now upload the image
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("image", file);
+  
+      try {
+        const response = await fetch("/api/upload-image", {
+          method: "POST",
+          body: formData,
+        });
+  
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Failed to upload image:", errorText);
+          setError("Failed to upload image");
+          return;
+        }
+  
+        const { imageUrl } = await response.json();
+        setImageUrl(imageUrl);
+        setError(null);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        setError("Error uploading image");
+      } finally {
+        setUploading(false);
+        URL.revokeObjectURL(objectUrl); // Clean up the temporary URL
       }
-
-      const { imageUrl } = await response.json();
-      setImageUrl(imageUrl);
-      setError(null);
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      setError("Error uploading image");
-    } finally {
-      setUploading(false);
-    }
+    };
+  
+    img.onerror = () => {
+      setError("Failed to load image dimensions");
+      URL.revokeObjectURL(objectUrl);
+    };
+  
+    img.src = objectUrl;
   };
 
   const handleAdd = () => {
