@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createCanvas, loadImage } from 'canvas';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { imageUrl, placeholders, width, height, signatures } = body;
+    const { imageUrl, placeholders, width, height, signatures, qrPlaceholders } = body;  
 
     if (!imageUrl || !width || !height) {
       return NextResponse.json(
@@ -112,6 +114,31 @@ export async function POST(request: Request) {
           } catch (error) {
             console.error(`Failed to load signature image: ${signature.imageUrl}`, error);
           }
+        }
+      }));
+    }
+
+    if (qrPlaceholders?.length > 0) {
+      await Promise.all(qrPlaceholders.map(async (qrPlaceholder: any) => {
+        try {
+          // Load QR placeholder image
+          const qrImagePath = path.join(process.cwd(), 'public', 'qrplaceholder.png');
+          const qrImage = await loadImage(qrImagePath); 
+          
+          // Calculate position and dimensions
+          const adjustedX = qrPlaceholder.position.x - (qrPlaceholder.style.Width / 2);
+          const adjustedY = qrPlaceholder.position.y - (qrPlaceholder.style.Height / 2);
+
+          // Draw QR placeholder
+          ctx.drawImage(
+            qrImage,
+            adjustedX,
+            adjustedY,
+            qrPlaceholder.style.Width,
+            qrPlaceholder.style.Height
+          );
+        } catch (error) {
+          console.error('Failed to load QR placeholder image:', error);
         }
       }));
     }

@@ -55,6 +55,7 @@ model Template {
   height       Int
   placeholders Json
   signatures   Json
+  qrPlaceholders Json?
   creatorId    String
   creator      User          @relation(fields: [creatorId], references: [id])
   certificates Certificate[]

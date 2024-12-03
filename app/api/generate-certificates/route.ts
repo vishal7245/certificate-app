@@ -1,4 +1,6 @@
 export const runtime = 'nodejs';
+import QRCode from 'qrcode';
+
 
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
@@ -135,6 +137,23 @@ function getUserIdFromRequest(request: Request): string | null {
   } catch {
     return null;
   }
+}
+
+async function generateQRCode(data: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    QRCode.toBuffer(data, {
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      width: 200,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    }, (err, buffer) => {
+      if (err) reject(err);
+      else resolve(buffer);
+    });
+  });
 }
 
 function replaceVariables(text: string, data: Record<string, string>): string {
@@ -319,22 +338,50 @@ export async function POST(request: Request) {
         }));
       }
 
-      // Convert canvas to buffer and upload
-      const buffer = canvas.toBuffer('image/png');
-      const key = `certificates/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`;
-      const certificateUrl = await uploadToS3(buffer, key);
-
-      // Save certificate
       const certificate = await prisma.certificate.create({
         data: {
           templateId,
           batchId: batch.id,
           uniqueIdentifier: `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           data: record,
-          generatedImageUrl: certificateUrl,
+          generatedImageUrl: '',
           creatorId: userId,
         },
       });
+
+      if (template.qrPlaceholders) {
+        await Promise.all((template.qrPlaceholders as any[]).map(async (qrPlaceholder: any) => {
+          // Generate validation URL with certificate ID
+          const qrData = `${process.env.NEXT_PUBLIC_BASE_URL}/validate/${certificate.uniqueIdentifier}`;
+          
+          // Generate and draw QR code
+          const qrBuffer = await generateQRCode(qrData);
+          const qrImage = await loadImage(qrBuffer);
+  
+          const adjustedX = qrPlaceholder.position.x - (qrPlaceholder.style.Width / 2);
+          const adjustedY = qrPlaceholder.position.y - (qrPlaceholder.style.Height / 2);
+  
+          ctx.drawImage(
+            qrImage,
+            adjustedX,
+            adjustedY,
+            qrPlaceholder.style.Width,
+            qrPlaceholder.style.Height
+          );
+        }));
+      }
+
+      // Convert canvas to buffer and upload
+      const buffer = canvas.toBuffer('image/png');
+      const key = `certificates/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`;
+      const certificateUrl = await uploadToS3(buffer, key);
+
+      const updatedCertificate = await prisma.certificate.update({
+        where: { id: certificate.id },
+        data: { generatedImageUrl: certificateUrl },
+      });
+
+      
 
       const emailConfig = await prisma.emailConfig.findUnique({ where: { userId } });
       const emailSubject = replaceVariables(emailConfig?.defaultSubject || 'Your Certificate', record);
@@ -387,7 +434,7 @@ export async function POST(request: Request) {
       
 
 
-      return certificate;
+      return updatedCertificate;
     })
   );
 

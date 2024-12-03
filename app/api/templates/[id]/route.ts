@@ -31,7 +31,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params; // Await params before using it
+    const { id } = await params;
     const userId = getUserIdFromRequest(request);
 
     if (!userId) {
@@ -43,6 +43,17 @@ export async function GET(
       where: {
         id,
         creatorId: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+        placeholders: true,
+        signatures: true,
+        qrPlaceholders: true, // Add this line
+        width: true,
+        height: true,
+        creatorId: true,
       },
     });
 
@@ -122,7 +133,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: templateId } = await params; // Await params before using it
+    const { id: templateId } = await params;
     const userId = getUserIdFromRequest(request);
 
     if (!userId) {
@@ -145,6 +156,7 @@ export async function PUT(
         imageUrl: body.imageUrl,
         placeholders: body.placeholders || [],
         signatures: body.signatures || [],
+        qrPlaceholders: body.qrPlaceholders || [], // Add this line
       },
     });
 

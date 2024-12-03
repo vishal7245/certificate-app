@@ -3,7 +3,20 @@ export type Position = {
     x: number;
     y: number;
   };
+
+export interface Style {
+  Width: number;
+  Height: number;
+}
   
+export interface QRPlaceholder {
+  id: string;
+  position: Position;
+  style: Style;
+}
+
+  
+
 export interface EmailConfig {
     customDomain?: string | null;
     customEmail?: string | null;
@@ -51,6 +64,7 @@ export type Template = {
   height: number; 
   placeholders: Placeholder[];
   signatures: Signature[]; 
+  qrPlaceholders: QRPlaceholder[];
 };
 
   

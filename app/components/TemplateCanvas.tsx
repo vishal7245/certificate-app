@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { DraggablePlaceholder } from './DraggablePlaceholder';
 import { ResizableDraggableSignature } from './DraggableSignature';
-import { Placeholder, Signature } from '@/app/types';
+import { Placeholder, Signature, QRPlaceholder } from '@/app/types';
+import { DraggableQRPlaceholder } from './DraggableQRPlaceholder';
+
 
 type Props = {
   imageUrl?: string;
@@ -18,20 +20,32 @@ type Props = {
   onSignatureSelect?: (id: string | null) => void;
   selectedPlaceholderId?: string | null;
   selectedSignatureId?: string | null;
+  qrPlaceholders: QRPlaceholder[];
+  onQRPlaceholderMove: (id: string, position: { x: number; y: number }) => void;
+  onQRPlaceholderResize: (id: string, style: { Width: number; Height: number }) => void;
+  onQRPlaceholderDelete: (id: string) => void;
+  onQRPlaceholderSelect?: (id: string | null) => void;
+  selectedQRPlaceholderId?: string | null;
 };
 
 export function TemplateCanvas({
   imageUrl,
   placeholders,
   signatures,
+  qrPlaceholders,
   onPlaceholderMove,
   onSignatureMove,
   onSignatureResize,
-  onSignatureDelete,  // Add the new prop to the destructuring
+  onSignatureDelete,
+  onQRPlaceholderMove,
+  onQRPlaceholderResize,
+  onQRPlaceholderDelete,
   onPlaceholderSelect,
   onSignatureSelect,
+  onQRPlaceholderSelect,
   selectedPlaceholderId,
   selectedSignatureId,
+  selectedQRPlaceholderId,
 }: Props) {
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({
     width: 0,
@@ -98,6 +112,7 @@ export function TemplateCanvas({
     if (e.target === e.currentTarget) {
       if (onPlaceholderSelect) onPlaceholderSelect(null);
       if (onSignatureSelect) onSignatureSelect(null);
+      if (onQRPlaceholderSelect) onQRPlaceholderSelect(null);
     }
   };
 
@@ -161,6 +176,18 @@ export function TemplateCanvas({
           onDelete={onSignatureDelete}  // Pass the delete handler to the signature component
           onSelect={onSignatureSelect ? () => onSignatureSelect(signature.id) : undefined}
           isSelected={selectedSignatureId === signature.id}
+        />
+      ))}
+      {qrPlaceholders.map((qrPlaceholder) => (
+        <DraggableQRPlaceholder
+          key={qrPlaceholder.id}
+          qrPlaceholder={qrPlaceholder}
+          scale={scale}
+          onPositionChange={onQRPlaceholderMove}
+          onResize={onQRPlaceholderResize}
+          onDelete={onQRPlaceholderDelete}
+          onSelect={onQRPlaceholderSelect ? () => onQRPlaceholderSelect(qrPlaceholder.id) : undefined}
+          isSelected={selectedQRPlaceholderId === qrPlaceholder.id}
         />
       ))}
     </div>

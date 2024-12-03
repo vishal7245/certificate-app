@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TemplateCanvas } from "@/app/components/TemplateCanvas";
-import { Navbar } from "@/app/components/Navbar";
 import { PlaceholderEditor } from "@/app/components/PlaceholderEditor";
 import { AddPlaceholderModal } from "@/app/components/AddPlaceholderModal";
 import { Template, Placeholder, PlaceholderStyle, Signature } from "@/app/types";
@@ -22,7 +21,8 @@ export default function TemplatesPageNew() {
   const [template, setTemplate] = useState<Partial<Template>>({
     name: "",
     placeholders: [],
-    signatures: [], // Ensure signatures array is initialized
+    signatures: [],
+    qrPlaceholders: [],
   });
   const [uploading, setUploading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -31,6 +31,7 @@ export default function TemplatesPageNew() {
   const [isAddSignatureModalOpen, setIsAddSignatureModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [selectedQRPlaceholder, setSelectedQRPlaceholder] = useState<string | null>(null);
   const [templateData, setTemplateData] = useState<Template>({
     id: '',
     name: '',
@@ -38,7 +39,8 @@ export default function TemplatesPageNew() {
     width: 0,
     height: 0,
     placeholders: [],
-    signatures: []
+    signatures: [],
+    qrPlaceholders: [],
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState<string | null>(null); // To store dialog message
@@ -56,6 +58,25 @@ export default function TemplatesPageNew() {
         }
       });
   }, []);
+
+  const handleAddQRPlaceholder = () => {
+    if (!template.imageUrl) {
+      setDialogMessage('Please upload an image before adding QR codes.');
+      setIsDialogOpen(true);
+      return;
+    }
+  
+    const newQRPlaceholder = {
+      id: Math.random().toString(),
+      position: { x: 50, y: 50 },
+      style: { Width: 200, Height: 200 },
+    };
+  
+    setTemplate((prev) => ({
+      ...prev,
+      qrPlaceholders: [...(prev.qrPlaceholders || []), newQRPlaceholder],
+    }));
+  };
 
   // Add signature deletion handler
   const handleSignatureDelete = (id: string) => {
@@ -243,6 +264,13 @@ export default function TemplatesPageNew() {
                   Preview Template
                 </Button>
                 <Button
+                  onClick={handleAddQRPlaceholder}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={!template.imageUrl}
+                >
+                  Add QR
+                </Button>
+                <Button
                   onClick={() => setIsAddModalOpen(true)}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                   disabled={!template.imageUrl}
@@ -305,40 +333,68 @@ export default function TemplatesPageNew() {
 
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="flex-1">
-                <TemplateCanvas
-                  imageUrl={template.imageUrl}
-                  placeholders={template.placeholders || []}
-                  signatures={template.signatures || []}
-                  onPlaceholderMove={(id, position) => {
-                    setTemplate((prev) => ({
-                      ...prev,
-                      placeholders: (prev.placeholders || []).map((placeholder) =>
-                        placeholder.id === id ? { ...placeholder, position } : placeholder
-                      ),
-                    }));
-                  }}
-                  onSignatureMove={(id, position) => {
-                    setTemplate((prev) => ({
-                      ...prev,
-                      signatures: (prev.signatures || []).map((signature) =>
-                        signature.id === id ? { ...signature, position } : signature
+              <TemplateCanvas
+                imageUrl={template.imageUrl}
+                placeholders={template.placeholders || []}
+                signatures={template.signatures || []}
+                qrPlaceholders={template.qrPlaceholders || []}
+                onPlaceholderMove={(id, position) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    placeholders: (prev.placeholders || []).map((placeholder) =>
+                      placeholder.id === id ? { ...placeholder, position } : placeholder
                     ),
-                    }));
-                  }}
-                  onSignatureResize={(id, style) => {
-                    setTemplate((prev) => ({
-                      ...prev,
-                      signatures: (prev.signatures || []).map((signature) =>
-                        signature.id === id ? { ...signature, style } : signature
-                      ),
-                    }));
-                  }}
-                  onSignatureDelete={handleSignatureDelete}
-                  onPlaceholderSelect={setSelectedPlaceholder}
-                  onSignatureSelect={setSelectedSignature}
-                  selectedPlaceholderId={selectedPlaceholder}
-                  selectedSignatureId={selectedSignature}
-                />
+                  }));
+                }}
+                onSignatureMove={(id, position) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    signatures: (prev.signatures || []).map((signature) =>
+                      signature.id === id ? { ...signature, position } : signature
+                    ),
+                  }));
+                }}
+                onSignatureResize={(id, style) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    signatures: (prev.signatures || []).map((signature) =>
+                      signature.id === id ? { ...signature, style } : signature
+                    ),
+                  }));
+                }}
+                onQRPlaceholderMove={(id, position) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    qrPlaceholders: (prev.qrPlaceholders || []).map((qr) =>
+                      qr.id === id ? { ...qr, position } : qr
+                    ),
+                  }));
+                }}
+                onQRPlaceholderResize={(id, style) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    qrPlaceholders: (prev.qrPlaceholders || []).map((qr) =>
+                      qr.id === id ? { ...qr, style } : qr
+                    ),
+                  }));
+                }}
+                onQRPlaceholderDelete={(id) => {
+                  setTemplate((prev) => ({
+                    ...prev,
+                    qrPlaceholders: prev.qrPlaceholders?.filter((qr) => qr.id !== id) || [],
+                  }));
+                  if (selectedQRPlaceholder === id) {
+                    setSelectedQRPlaceholder(null);
+                  }
+                }}
+                onSignatureDelete={handleSignatureDelete}
+                onPlaceholderSelect={setSelectedPlaceholder}
+                onSignatureSelect={setSelectedSignature}
+                onQRPlaceholderSelect={setSelectedQRPlaceholder}
+                selectedPlaceholderId={selectedPlaceholder}
+                selectedSignatureId={selectedSignature}
+                selectedQRPlaceholderId={selectedQRPlaceholder}
+              />
               </div>
 
               <div className="w-full lg:w-80 mt-6 lg:mt-0">
