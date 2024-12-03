@@ -63,56 +63,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
         const res = await fetch(`/api/templates/${id}`);
         if (res.ok) {
           const data = await res.json();
-          
-          // Process signatures with image loading
-          const processSignatures = async (signatures: Signature[]) => {
-            const processedSignatures = await Promise.all(
-              (signatures || []).map(async (signature) => {
-                // Create an image element to get natural dimensions
-                return new Promise<Signature>((resolve) => {
-                  const img = new Image();
-                  img.onload = () => {
-                    // Use natural image dimensions if style is not set
-                    const currentStyle = signature.style || {};
-                    const aspectRatio = img.naturalWidth / img.naturalHeight;
-                    
-                    resolve({
-                      ...signature,
-                      style: {
-                        Width: typeof currentStyle.Width === 'number' ? currentStyle.Width : 
-                               Math.min(200, img.naturalWidth), // Default or constrain to 200px max
-                        Height: typeof currentStyle.Height === 'number' ? currentStyle.Height :
-                               Math.min(100, img.naturalHeight) // Default or constrain to 100px max
-                      },
-                      position: signature.position || { x: 50, y: 50 }
-                    });
-                  };
-                  
-                  img.onerror = () => {
-                    const currentStyle = signature.style || {};
-                    resolve({
-                      ...signature,
-                      style: {
-                        Width: typeof currentStyle.Width === 'number' ? currentStyle.Width : 200,
-                        Height: typeof currentStyle.Height === 'number' ? currentStyle.Height : 100
-                      },
-                      position: signature.position || { x: 50, y: 50 }
-                    });
-                  };
-                  
-                  img.src = signature.imageUrl;
-                });
-              })
-            );
-            return processedSignatures;
-          };
-  
-          const processedSignatures = await processSignatures(data.signatures);
-          
-          setTemplate((prev) => ({
-            ...data,
-            signatures: processedSignatures
-          }));
+          setTemplate(data);
         } else {
           setDialogMessage('Failed to load template');
           setIsDialogOpen(true);
@@ -125,10 +76,8 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
         setLoading(false);
       }
     };
-  
-    if (id) {
-      fetchTemplate();
-    }
+
+    fetchTemplate();
   }, [id]);
 
   const handleAddQRPlaceholder = () => {
