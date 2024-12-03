@@ -154,6 +154,9 @@ export function AddSignatureModal({ open, onOpenChange, onAdd }: Props) {
                 file:bg-blue-50 file:text-blue-700
                 hover:file:bg-blue-100"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Recommendation: Upload a signature with transparent background for better results.
+            </p>
             {uploading && <p className="text-blue-500 mt-2">Uploading...</p>}
             {imageUrl && (
               <div className="mt-2">
