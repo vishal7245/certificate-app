@@ -403,7 +403,7 @@ export async function POST(request: Request) {
             ${emailMessage}
           </p>
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${certificate.generatedImageUrl}" style="background-color: #007BFF; color: #fff; padding: 10px 20px; font-size: 16px; text-decoration: none; border-radius: 5px;">
+            <a href="${certificateUrl}" style="background-color: #007BFF; color: #fff; padding: 10px 20px; font-size: 16px; text-decoration: none; border-radius: 5px;">
               Download Certificate
             </a>
           </div>
@@ -434,7 +434,7 @@ export async function POST(request: Request) {
       
 
 
-      return updatedCertificate;
+      return certificate;
     })
   );
 

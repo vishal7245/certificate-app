@@ -63,6 +63,15 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
         const res = await fetch(`/api/templates/${id}`);
         if (res.ok) {
           const data = await res.json();
+          if (data.signatures) {
+            data.signatures = data.signatures.map((sig: Signature) => ({
+              ...sig,
+              style: {
+                Width: sig.style?.Width || 200, // Default width if not set
+                Height: sig.style?.Height || 100, // Default height if not set
+              }
+            }));
+          }
           setTemplate(data);
         } else {
           setDialogMessage('Failed to load template');
