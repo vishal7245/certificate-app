@@ -43,16 +43,13 @@ export interface Placeholder {
   style: PlaceholderStyle;
 }
 
-export interface SignatureStyle {
-  Height: number;
-  Width: number;
-}
+
 
 export interface Signature {
   id: string;
   name: string;
-  position: { x: number; y: number };
-  style: SignatureStyle;
+  position: Position;
+  style: Style;
   imageUrl: string;
 }
   
