@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 
 export async function GET(
-    request: Request,
-    context: { params: { certificateId: string } }
+    request: NextRequest,
+    { params }: { params: Promise<{ certificateId: string }> }
   ) {
     try {
-      const { certificateId } = await context.params;
+      const { certificateId } = await params;
   
       const certificate = await prisma.certificate.findFirst({
         where: {
