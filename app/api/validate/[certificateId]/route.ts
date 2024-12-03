@@ -3,10 +3,10 @@ import prisma from '@/app/lib/db';
 
 export async function GET(
     request: Request,
-    { params }: { params: { certificateId: string } }
+    context: { params: { certificateId: string } }
   ) {
     try {
-      const { certificateId } = await params;
+      const { certificateId } = await context.params;
   
       const certificate = await prisma.certificate.findFirst({
         where: {
