@@ -67,22 +67,9 @@ export default function ValidateCertificatePage() {
     );
   }
 
-  const handleDownload = async () => {
-    if (!certificate) return;
-    
-    try {
-      const response = await fetch(certificate.generatedImageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `certificate-${certificate.uniqueIdentifier}.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error('Error downloading certificate:', err);
+  const handleDownload = () => {
+    if (certificate?.generatedImageUrl) {
+      window.open(certificate.generatedImageUrl, '_blank');
     }
   };
 
