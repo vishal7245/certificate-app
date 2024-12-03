@@ -105,7 +105,7 @@ export default function ValidateCertificatePage() {
               className="bg-green-700 hover:bg-green-800 text-white"
             >
               <Download className="w-4 h-4 mr-2" />
-              Download Certificate
+              Download
             </Button>
           </div>
         </div>
