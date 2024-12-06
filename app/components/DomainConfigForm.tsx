@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
@@ -12,17 +12,17 @@ interface DNSRecord {
 }
 
 interface ValidationErrors {
-    customDomain?: string;
-    customEmail?: string;
-  }
+  customDomain?: string;
+  customEmail?: string;
+}
 
 export default function DomainConfigForm() {
-    const [domainConfig, setDomainConfig] = useState({
-        customDomain: '',
-        customEmail: '',
-        isVerified: false,
-        dkimRecords: null as any
-      });
+  const [domainConfig, setDomainConfig] = useState({
+    customDomain: '',
+    customEmail: '',
+    isVerified: false,
+    dkimRecords: null as string[] | null,
+  });
   const [dnsRecords, setDnsRecords] = useState<DNSRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dialogMessage, setDialogMessage] = useState<string | null>(null);
@@ -46,18 +46,20 @@ export default function DomainConfigForm() {
           customDomain: data?.customDomain || '',
           customEmail: data?.customEmail || '',
           isVerified: data?.isVerified || false,
-          dkimRecords: data?.dkimRecords || null
+          dkimRecords: data?.dkimRecords || null,
         });
         if (data?.dkimRecords) {
           generateDNSRecords(data.customDomain, data.dkimRecords);
         }
       } catch (error) {
         console.error('Error fetching domain configuration:', error);
-        setDialogMessage(error instanceof Error ? error.message : 'Failed to load domain configuration.');
+        setDialogMessage(
+          error instanceof Error ? error.message : 'Failed to load domain configuration.'
+        );
         setIsDialogOpen(true);
       }
     };
-  
+
     fetchDomainConfig();
   }, []);
 
@@ -68,30 +70,30 @@ export default function DomainConfigForm() {
         type: 'MX',
         name: domain,
         value: `10 inbound-smtp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com`,
-        ttl: '3600'
+        ttl: '3600',
       },
       // TXT Record for SPF
       {
         type: 'TXT',
         name: domain,
         value: 'v=spf1 include:amazonses.com ~all',
-        ttl: '3600'
+        ttl: '3600',
       },
       {
         type: 'TXT',
         name: `_dmarc.${domain}`,
         value: 'v=DMARC1; p=none;',
-        ttl: '3600'
-      }
+        ttl: '3600',
+      },
     ];
 
     // DKIM Records
-    dkimTokens.forEach(token => {
+    dkimTokens.forEach((token) => {
       records.push({
         type: 'CNAME',
         name: `${token}._domainkey.${domain}`,
         value: `${token}.dkim.amazonses.com`,
-        ttl: '3600'
+        ttl: '3600',
       });
     });
 
@@ -124,9 +126,9 @@ export default function DomainConfigForm() {
       }
 
       const data = await response.json();
-      
+
       // Update domainConfig with DKIM tokens
-      setDomainConfig(prev => ({
+      setDomainConfig((prev) => ({
         ...prev,
         dkimRecords: data.dkimTokens,
       }));
@@ -136,11 +138,49 @@ export default function DomainConfigForm() {
         generateDNSRecords(domainConfig.customDomain, data.dkimTokens);
       }
 
-      setDialogMessage('Domain verification initiated. Please add the DNS records shown below.');
+      setDialogMessage(
+        'Domain verification initiated. Please add the DNS records shown below and then click "Check Verification Status" once they propagate.'
+      );
       setIsDialogOpen(true);
     } catch (error) {
       console.error('Verification error:', error);
       setDialogMessage(error instanceof Error ? error.message : 'Failed to verify domain');
+      setIsDialogOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCheckVerificationStatus = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/verify-domain-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ domain: domainConfig.customDomain }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to check verification status');
+      }
+
+      const data = await response.json();
+
+      if (data.message && data.message.includes('successful')) {
+        // Domain is verified
+        setDomainConfig((prev) => ({ ...prev, isVerified: true }));
+        setDialogMessage('Your domain has been successfully verified and is now marked as verified.');
+      } else {
+        // Not yet verified, show the status
+        setDialogMessage(data.message || 'Domain not yet verified. Please try again later.');
+      }
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error('Check verification status error:', error);
+      setDialogMessage(error instanceof Error ? error.message : 'Failed to check verification status');
       setIsDialogOpen(true);
     } finally {
       setIsLoading(false);
@@ -179,10 +219,10 @@ export default function DomainConfigForm() {
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {};
-    
+
     const domainError = validateDomain(domainConfig.customDomain);
     if (domainError) newErrors.customDomain = domainError;
-    
+
     const emailError = validateEmail(domainConfig.customEmail);
     if (emailError) newErrors.customEmail = emailError;
 
@@ -196,14 +236,14 @@ export default function DomainConfigForm() {
   };
 
   const handleBlur = (field: keyof typeof touched) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
-    
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
     if (field === 'customDomain') {
       const error = validateDomain(domainConfig.customDomain);
-      setErrors(prev => ({ ...prev, customDomain: error }));
+      setErrors((prev) => ({ ...prev, customDomain: error }));
     } else if (field === 'customEmail') {
       const error = validateEmail(domainConfig.customEmail);
-      setErrors(prev => ({ ...prev, customEmail: error }));
+      setErrors((prev) => ({ ...prev, customEmail: error }));
     }
   };
 
@@ -238,7 +278,9 @@ export default function DomainConfigForm() {
   };
 
   const handleReset = async () => {
-    if (!confirm('Are you sure you want to reset the domain configuration? This action cannot be undone.')) {
+    if (
+      !confirm('Are you sure you want to reset the domain configuration? This action cannot be undone.')
+    ) {
       return;
     }
 
@@ -257,7 +299,7 @@ export default function DomainConfigForm() {
         customDomain: '',
         customEmail: '',
         isVerified: false,
-        dkimRecords: null
+        dkimRecords: null,
       });
       setDnsRecords([]);
       setDialogMessage('Domain configuration has been reset successfully.');
@@ -272,7 +314,7 @@ export default function DomainConfigForm() {
   return (
     <div className="bg-white shadow-md rounded p-6 mt-6">
       <h2 className="text-lg font-semibold mb-4">Custom Domain Configuration</h2>
-      
+
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Custom Domain
@@ -282,13 +324,11 @@ export default function DomainConfigForm() {
             type="text"
             value={domainConfig.customDomain}
             onChange={(e) =>
-              setDomainConfig(prev => ({ ...prev, customDomain: e.target.value }))
+              setDomainConfig((prev) => ({ ...prev, customDomain: e.target.value }))
             }
             onBlur={() => handleBlur('customDomain')}
             className={`w-full p-2 border rounded focus:outline-1 focus:outline-blue-500 ${
-              touched.customDomain && errors.customDomain 
-                ? 'border-red-500 pr-10' 
-                : 'border-gray-300'
+              touched.customDomain && errors.customDomain ? 'border-red-500 pr-10' : 'border-gray-300'
             }`}
             placeholder="e.g., certificates.yourdomain.com"
           />
@@ -312,13 +352,11 @@ export default function DomainConfigForm() {
             type="email"
             value={domainConfig.customEmail}
             onChange={(e) =>
-              setDomainConfig(prev => ({ ...prev, customEmail: e.target.value }))
+              setDomainConfig((prev) => ({ ...prev, customEmail: e.target.value }))
             }
             onBlur={() => handleBlur('customEmail')}
             className={`w-full p-2 border rounded focus:outline-1 focus:outline-blue-500 ${
-              touched.customEmail && errors.customEmail 
-                ? 'border-red-500 pr-10' 
-                : 'border-gray-300'
+              touched.customEmail && errors.customEmail ? 'border-red-500 pr-10' : 'border-gray-300'
             }`}
             placeholder="e.g., certificates@yourdomain.com"
           />
@@ -340,11 +378,21 @@ export default function DomainConfigForm() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">TTL</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Copy</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    Type
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    Name
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    Value
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    TTL
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    Copy
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -356,7 +404,9 @@ export default function DomainConfigForm() {
                     <td className="px-4 py-2">{record.ttl}</td>
                     <td className="px-4 py-2">
                       <button
-                        onClick={() => copyToClipboard(`${record.type} ${record.name} ${record.value}`, index)}
+                        onClick={() =>
+                          copyToClipboard(`${record.type} ${record.name} ${record.value}`, index)
+                        }
                         className="text-blue-600 hover:text-blue-800"
                       >
                         {copiedIndex === index ? (
@@ -377,7 +427,7 @@ export default function DomainConfigForm() {
         </div>
       )}
 
-<div className="flex justify-end space-x-4">
+      <div className="flex justify-end space-x-4 mt-6">
         <button
           onClick={handleReset}
           className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:bg-gray-400"
@@ -385,6 +435,7 @@ export default function DomainConfigForm() {
         >
           {isLoading ? 'Resetting...' : 'Reset'}
         </button>
+
         <button
           onClick={handleVerifyDomain}
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-gray-400"
@@ -392,6 +443,17 @@ export default function DomainConfigForm() {
         >
           {isLoading ? 'Verifying...' : 'Verify Domain'}
         </button>
+
+        {domainConfig.dkimRecords && !domainConfig.isVerified && (
+          <button
+            onClick={handleCheckVerificationStatus}
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 disabled:bg-gray-400"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Checking...' : 'Check Verification Status'}
+          </button>
+        )}
+
         <button
           onClick={handleSave}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
@@ -404,19 +466,19 @@ export default function DomainConfigForm() {
       <div className="mt-6 p-4 bg-blue-50 rounded-lg">
         <h4 className="text-sm font-medium text-blue-800 mb-2">Setup Instructions:</h4>
         <ol className="list-decimal list-inside text-sm text-blue-700 space-y-2">
-          <li>Enter your custom domain and email address</li>
-          <li>Click "Verify Domain" to generate the required DNS records</li>
-          <li>Add the DNS records to your domain provider&apos;s DNS settings</li>
-          <li>Wait for DNS propagation (up to 48 hours)</li>
-          <li>Once verified, your custom domain will be ready to use for sending certificates</li>
+          <li>Enter your custom domain and email address.</li>
+          <li>Click "Verify Domain" to generate the required DNS records.</li>
+          <li>Add the DNS records to your domain provider’s DNS settings.</li>
+          <li>Wait for DNS propagation (up to 48 hours).</li>
+          <li>
+            After propagation, click "Check Verification Status" to confirm and toggle the verified
+            status.
+          </li>
+          <li>Once verified, your custom domain will be ready to use for sending certificates.</li>
         </ol>
       </div>
 
-      <FeedbackDialog 
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        message={dialogMessage}
-      />
+      <FeedbackDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} message={dialogMessage} />
     </div>
   );
 }

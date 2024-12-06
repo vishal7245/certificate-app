@@ -59,7 +59,7 @@ export default function TemplatesPage() {
             <h1 className="text-2xl font-semibold text-gray-900">My Templates</h1>
             <Link href="/templates/new">
               <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                Create New Template
+                New Template
               </button>
             </Link>
           </div>

@@ -39,12 +39,10 @@ export async function POST(request: Request) {
   
       const { domain, email } = await request.json();
   
-      // Verify domain with SES
       const command = new VerifyDomainDkimCommand({ Domain: domain });
       const response = await ses.send(command);
   
       if (response.DkimTokens) {
-        // Update both domain and email in the database
         await prisma.emailConfig.upsert({
           where: { userId },
           create: {
@@ -52,7 +50,7 @@ export async function POST(request: Request) {
             customDomain: domain,
             customEmail: email,
             dkimRecords: response.DkimTokens,
-            isVerified: false, // Will be set to true after DNS verification
+            isVerified: false, 
           },
           update: {
             customDomain: domain,
