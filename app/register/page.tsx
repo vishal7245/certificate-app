@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -35,7 +36,10 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-black mb-6 text-center">Register</h2>
+      <div className="flex justify-center mb-6">
+        <Image src="/SendCertificates (Only Logo).png" alt="Logo" width={100} height={100} />
+        </div>
+        <h2 className="text-3xl text-black mb-6 text-center">Register</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700">Name</label>
