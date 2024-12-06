@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 
 
@@ -89,9 +90,7 @@ export function Navbar() {
           {/* Left side: Logo and navigation links */}
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <span className="text-xl text-blue-600 font-bold">
-                SendCertificates
-              </span>
+              <Image src="/Logo-1.png" alt="Logo" width={150} height={150} />
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
@@ -18,8 +18,50 @@ export default function EmailConfigForm() {
   const [dialogMessage, setDialogMessage] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [variablePreview, setVariablePreview] = useState<string>('');
+  const [isFetchingConfig, setIsFetchingConfig] = useState(true); 
 
-  // Fetch email configuration
+  // Skeleton loader component
+  function EmailConfigSkeleton() {
+    return (
+      <div className="bg-white shadow-md rounded p-6 animate-pulse">
+        <div className="h-6 bg-gray-300 rounded w-48 mb-4"></div>
+        
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-gray-700 mb-2 h-4 bg-gray-300 w-20"></div>
+          <div className="w-48 h-24 bg-gray-200 rounded mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+          <p className="h-3 bg-gray-200 rounded w-32 mt-2"></p>
+        </div>
+
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-gray-700 mb-2 h-4 bg-gray-300 w-24"></div>
+          <div className="w-full h-8 bg-gray-200 rounded"></div>
+        </div>
+
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-gray-700 mb-2 h-4 bg-gray-300 w-24"></div>
+          <div className="w-full h-8 bg-gray-200 rounded"></div>
+        </div>
+
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-gray-700 mb-2 h-4 bg-gray-300 w-24"></div>
+          <div className="w-full h-8 bg-gray-200 rounded"></div>
+        </div>
+
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-gray-700 mb-2 h-4 bg-gray-300 w-24"></div>
+          <div className="w-full h-24 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-gray-200 w-3/4 rounded mt-2"></div>
+          <div className="h-3 bg-gray-200 w-1/2 rounded mt-2"></div>
+        </div>
+
+        <div className="flex justify-end">
+          <div className="w-20 h-10 bg-gray-300 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
   useEffect(() => {
     const fetchEmailConfig = async () => {
       try {
@@ -39,13 +81,14 @@ export default function EmailConfigForm() {
         console.error('Error fetching email configuration:', error);
         setDialogMessage(error instanceof Error ? error.message : 'Failed to load email configuration.');
         setIsDialogOpen(true);
+      } finally {
+        setIsFetchingConfig(false);
       }
     };
 
     fetchEmailConfig();
   }, []);
 
-  // Update variable preview when message changes
   useEffect(() => {
     const previewText = emailConfig.defaultMessage.replace(
       /<([^>]+)>/g,
@@ -98,7 +141,6 @@ export default function EmailConfigForm() {
     try {
       setIsLoading(true);
 
-      // Validate variables format
       const variableRegex = /<([^<>]+)>/g;
       const variables = emailConfig.defaultMessage.match(variableRegex) || [];
       const invalidVariables = variables.filter(v => !v.match(/^<[A-Za-z][A-Za-z0-9_]*>$/));
@@ -151,6 +193,10 @@ export default function EmailConfigForm() {
       }
     };
   }, [previewUrl]);
+
+  if (isFetchingConfig) {
+    return <EmailConfigSkeleton />;
+  }
 
   return (
     <div className="bg-white shadow-md rounded p-6">

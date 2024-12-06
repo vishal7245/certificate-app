@@ -3,11 +3,60 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Template } from '@/app/types';
-import { Navbar } from '@/app/components/Navbar';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
 import { LoadingOverlay } from '@/app/components/LoadingOverlay';
-import { UserTokenHistory } from '@/app/components/UserTokenHistory';
-import { BatchList } from '@/app/components/BatchList';
+
+
+function GeneratePageSkeleton() {
+  return (
+    <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 animate-pulse">
+      <div className="px-4 py-6 sm:px-0">
+        <div className="flex justify-between items-center mb-6">
+          {/* Page Title Skeleton */}
+          <div className="h-6 bg-gray-300 rounded w-48"></div>
+        </div>
+        
+        {/* Batch Name Field Skeleton */}
+        <div className="mb-2">
+          <div className="block text-sm font-medium text-gray-700 mb-2 w-24 h-4 bg-gray-300 rounded"></div>
+          <div className="w-full border border-gray-300 rounded mb-4 p-2">
+            <div className="h-4 bg-gray-200 rounded w-64"></div>
+          </div>
+        </div>
+        
+        {/* Template Select Skeleton */}
+        <div className="mb-4">
+          <div className="block text-sm font-medium text-gray-700 mb-2 w-24 h-4 bg-gray-300 rounded"></div>
+          <div className="w-full border border-gray-300 rounded mb-1 p-2">
+            <div className="h-4 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+        
+        {/* CC Emails Field Skeleton */}
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-gray-700 mb-2 w-24 h-4 bg-gray-300 rounded"></div>
+          <div className="w-full border border-gray-300 rounded mb-4 p-2">
+            <div className="h-4 bg-gray-200 rounded w-48"></div>
+          </div>
+        </div>
+        
+        {/* CSV Upload Field Skeleton */}
+        <div className="mb-6">
+          <div className="block text-sm font-medium text-gray-700 mb-2 w-24 h-4 bg-gray-300 rounded"></div>
+          <div className="border border-gray-300 rounded p-2 mb-2">
+            <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+          </div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+        
+        {/* Generate Button Skeleton */}
+        <div className="flex justify-end">
+          <div className="bg-gray-300 text-white px-4 py-2 rounded w-40 h-10"></div>
+        </div>
+      </div>
+    </main>
+  );
+}
 
 export default function GeneratePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -92,6 +141,13 @@ export default function GeneratePage() {
       setIsLoading(false);
     }
   };
+
+
+  if (!user || templates.length === 0) {
+    return <GeneratePageSkeleton />;
+  }
+
+  
   return (
     
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
