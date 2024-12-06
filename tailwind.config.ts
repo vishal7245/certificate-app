@@ -10,7 +10,11 @@ export default {
   theme: {
   	extend: {
 		fontFamily: {
-			montecarlo: ['MonteCarlo'],
+			montecarlo: ['MonteCarlo', 'sans-serif'],
+			alexbrush: ['AlexBrush', 'sans-serif'],
+			birthstone: ['Birthstone', 'sans-serif'],
+			dancingscript: ['DancingScript', 'sans-serif'],
+			librebaskerville: ['LibreBaskerville', 'sans-serif'],
 		},
   		colors: {
   			background: 'hsl(var(--background))',
