@@ -6,11 +6,17 @@ import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import { parse } from 'csv-parse/sync';
 import { uploadToS3 } from '@/app/lib/s3';
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage, registerFont } from 'canvas';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import { Queue, Worker } from 'bullmq';
 import IORedis from 'ioredis';
+import path from 'path';
+
+registerFont(path.join(process.cwd(), 'public/fonts/MonteCarlo-Regular.ttf'), {
+  family: 'MonteCarlo',
+});
+
 
 interface FileLike {
   arrayBuffer: () => Promise<ArrayBuffer>;

@@ -68,6 +68,7 @@ export function AddPlaceholderModal({ open, onOpenChange, onAdd }: AddPlaceholde
                 <SelectItem value="Times New Roman">Times New Roman</SelectItem>
                 <SelectItem value="Helvetica">Helvetica</SelectItem>
                 <SelectItem value="Courier New">Courier New</SelectItem>
+                <SelectItem value="MonteCarlo">MonteCarlo</SelectItem>
                 <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
                 <SelectItem value="Impact">Impact</SelectItem>
                 <SelectItem value="Georgia">Georgia</SelectItem>
