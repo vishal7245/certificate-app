@@ -6,6 +6,13 @@ import { Template } from '@/app/types';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
 import { LoadingOverlay } from '@/app/components/LoadingOverlay';
 
+interface CsvSummary {
+  columnNames: string[];
+  totalRows: number;
+  totalEmails: number;
+  invalidEmails: string[];
+}
+
 
 function GeneratePageSkeleton() {
   return (
@@ -69,6 +76,8 @@ export default function GeneratePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [ccEmails, setCcEmails] = useState<string>('');
   const [batchName, setBatchName] = useState('');
+  const [csvSummary, setCsvSummary] = useState<CsvSummary | null>(null);
+
 
   // Check if the user is authenticated
   useEffect(() => {
@@ -102,12 +111,56 @@ export default function GeneratePage() {
     }
   }, [user]);
   if (!user) return null;
+
+  const validateCsv = async (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      const rows = lines.slice(1).filter(line => line.trim());
+      
+      const emailIndex = headers.findIndex(h => 
+        h.toLowerCase() === 'email'
+      );
+      
+      const invalidEmails: string[] = [];
+      let totalEmails = 0;
+      
+      if (emailIndex !== -1) {
+        rows.forEach(row => {
+          const columns = row.split(',');
+          const email = columns[emailIndex]?.trim();
+          if (email) {
+            totalEmails++;
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+              invalidEmails.push(email);
+            }
+          }
+        });
+      }
+
+      setCsvSummary({
+        columnNames: headers,
+        totalRows: rows.length,
+        totalEmails,
+        invalidEmails
+      });
+      setIsDialogOpen(true);
+    };
+    reader.readAsText(file);
+  };
+
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setCsvFile(file);
+      validateCsv(file);
     }
   };
+
   const handleGenerate = async () => {
     try {
       if (csvFile && selectedTemplate) {
@@ -217,6 +270,38 @@ export default function GeneratePage() {
             <p className="text-sm text-gray-600 mt-2">
               If your CSV contains an <strong>Email</strong> column, certificates will be sent to those addresses.
             </p>
+            {csvSummary && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-3">CSV Summary</h3>
+                <div className="space-y-2 text-sm">
+                  <p>Total Rows: {csvSummary.totalRows}</p>
+                  <p>Columns: {csvSummary.columnNames.join(', ')}</p>
+                  <p>Total Emails: {csvSummary.totalEmails}</p>
+                  <p>Estimated Tokens Required: {csvSummary.totalRows * 1}</p>
+                  
+                  {csvSummary.invalidEmails.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-red-500 font-medium">
+                        ⚠️ Invalid Emails Found ({csvSummary.invalidEmails.length}):
+                      </p>
+                      <ul className="list-disc pl-5 mt-1 text-red-600">
+                        {csvSummary.invalidEmails.map((email, i) => (
+                          <li key={i}>{email}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
+                    <p className="text-sm">
+                      <strong>Important:</strong> Please ensure all email addresses are correct. 
+                      You are responsible for the accuracy of the email addresses provided. 
+                      Invalid or incorrect email addresses may result in failed certificate delivery.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex justify-end">
             <button

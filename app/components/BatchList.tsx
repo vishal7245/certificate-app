@@ -6,8 +6,9 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-  } from '@/components/ui/dialog';
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { InvalidEmail } from '@/app/types';
 
 interface Batch {
   id: string;
@@ -26,12 +27,13 @@ interface Certificate {
   createdAt: string;
 }
 
+
 export function BatchList() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCertificatesLoading, setIsCertificatesLoading] = useState(false); // Add this new state
+  const [isCertificatesLoading, setIsCertificatesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,6 +50,8 @@ export function BatchList() {
     currentPage: number;
     totalPages: number;
   } | null>(null);
+  const [invalidEmails, setInvalidEmails] = useState<InvalidEmail[]>([]);
+  const [showInvalidEmails, setShowInvalidEmails] = useState(false);
 
   useEffect(() => {
     fetchBatches(currentPage);
@@ -56,8 +60,20 @@ export function BatchList() {
   useEffect(() => {
     if (selectedBatch && isDialogOpen) {
       fetchCertificates(certPage);
+      fetchInvalidEmails(selectedBatch.id);
     }
   }, [selectedBatch, certPage, isDialogOpen]);
+
+  const fetchInvalidEmails = async (batchId: string) => {
+    try {
+      const response = await fetch(`/api/batches/${batchId}/invalid-emails`);
+      if (!response.ok) throw new Error('Failed to fetch invalid emails');
+      const data = await response.json();
+      setInvalidEmails(data.invalidEmails);
+    } catch (err) {
+      console.error('Failed to fetch invalid emails:', err);
+    }
+  };
 
   const fetchBatches = async (page: number) => {
     try {
@@ -82,7 +98,7 @@ export function BatchList() {
   const fetchCertificates = async (page: number) => {
     if (!selectedBatch) return;
     try {
-      setIsCertificatesLoading(true); // Use the new loading state
+      setIsCertificatesLoading(true);
       const response = await fetch(`/api/batches/${selectedBatch.id}/certificates?page=${page}`);
       if (!response.ok) throw new Error('Failed to fetch certificates');
       const data = await response.json();
@@ -96,7 +112,7 @@ export function BatchList() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load certificates');
     } finally {
-      setIsCertificatesLoading(false); // Clear the new loading state
+      setIsCertificatesLoading(false);
     }
   };
 
@@ -214,10 +230,11 @@ export function BatchList() {
                       setSelectedBatch(batch);
                       setCertPage(1);
                       setIsDialogOpen(true);
+                      setShowInvalidEmails(false);
                     }}
                     className="text-blue-600 hover:text-blue-900"
                   >
-                    View Certificates
+                    View Details
                   </button>
                 </td>
               </tr>
@@ -238,73 +255,119 @@ export function BatchList() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[90vw]">
           <DialogHeader>
             <DialogTitle>
-              {selectedBatch?.name} - Certificates
+              {selectedBatch?.name} - {showInvalidEmails ? 'Invalid Emails' : 'Certificates'}
             </DialogTitle>
           </DialogHeader>
 
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setShowInvalidEmails(!showInvalidEmails)}
+              className="text-sm text-blue-600 hover:text-blue-900"
+            >
+              {showInvalidEmails ? 'Show Certificates' : 'Show Invalid Emails'}
+            </button>
+          </div>
+
           <div className="mt-4 overflow-x-auto">
-          {isCertificatesLoading ? ( // Use the new loading state for certificates
-              <div className="animate-pulse">
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-4 bg-gray-200 rounded"></div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="min-w-full">
+            {showInvalidEmails ? (
+              invalidEmails.length > 0 ? (
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Email
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        Reason
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {certificates.map((cert) => (
-                      <tr key={cert.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {format(new Date(cert.createdAt), 'MMM d, yyyy HH:mm')}
-                        </td>
+                    {invalidEmails.map((invalid) => (
+                      <tr key={invalid.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {cert.uniqueIdentifier}
+                          {invalid.email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {cert.data.Email || 'N/A'}
+                          {invalid.reason}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <a
-                            href={cert.generatedImageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            View Certificate
-                          </a>
+                          {format(new Date(invalid.createdAt), 'MMM d, yyyy HH:mm')}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
+              ) : (
+                <p className="text-center text-gray-500">No invalid emails found in this batch.</p>
+              )
+            ) : (
+              isCertificatesLoading ? (
+                <div className="animate-pulse">
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-4 bg-gray-200 rounded"></div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="min-w-full">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {certificates.map((cert) => (
+                        <tr key={cert.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {format(new Date(cert.createdAt), 'MMM d, yyyy HH:mm')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {cert.uniqueIdentifier}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {cert.data.email || cert.data.Email || cert.data.EMAIL || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <a
+                              href={cert.generatedImageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              View Certificate
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
 
-            {certPagination && certificates.length > 0 && (
-              <PaginationControls 
-                paginationData={certPagination}
-                onPageChange={setCertPage}
-                currentPageNum={certPage}
-              />
+                  {certPagination && certificates.length > 0 && (
+                    <PaginationControls 
+                      paginationData={certPagination}
+                      onPageChange={setCertPage}
+                      currentPageNum={certPage}
+                    />
+                  )}
+                </div>
+              )
             )}
           </div>
         </DialogContent>

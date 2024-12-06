@@ -43,7 +43,12 @@ export interface Placeholder {
   style: PlaceholderStyle;
 }
 
-
+export interface InvalidEmail {
+  id: string;
+  email: string;
+  reason: string;
+  createdAt: string;
+}
 
 export interface Signature {
   id: string;

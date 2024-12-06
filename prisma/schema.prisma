@@ -13,6 +13,7 @@ model Batch {
   creatorId    String
   creator      User          @relation(fields: [creatorId], references: [id])
   certificates Certificate[]
+  invalidEmails InvalidEmail[]
   createdAt    DateTime      @default(now())
 }
 
@@ -61,6 +62,15 @@ model Template {
   certificates Certificate[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+}
+
+model InvalidEmail {
+  id        String   @id @default(cuid())
+  email     String
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id])
+  reason    String   
+  createdAt DateTime @default(now())
 }
 
 model Certificate {

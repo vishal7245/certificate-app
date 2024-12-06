@@ -74,14 +74,25 @@ const emailQueue = new Queue('emailQueue', {
   },
 });
 
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+
 const emailWorker = new Worker('emailQueue', 
   async job => {
     const { email, emailFrom, emailSubject, emailMessage, htmlContent, ccEmails } = job.data;
+    
+    if (!isValidEmail(email)) {
+      throw new Error(`Invalid email address: ${email}`);
+    }
+
     try {
       const mailOptions = {
         from: emailFrom,
         to: email,
-        cc: ccEmails,
+        cc: ccEmails.filter(isValidEmail),
         subject: emailSubject,
         text: emailMessage,
         html: htmlContent,
@@ -180,7 +191,8 @@ async function generateQRCode(data: string): Promise<Buffer> {
 function replaceVariables(text: string, data: Record<string, string>): string {
   return text.replace(/<([^>]+)>/g, (match, variable) => {
     const cleanVariable = variable.trim();
-    return data[cleanVariable] || match;
+    const key = Object.keys(data).find(k => k.toLowerCase() === cleanVariable.toLowerCase());
+    return (key ? data[key].trim() : match);
   });
 }
 
@@ -286,6 +298,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized access to template' }, { status: 403 });
   }
 
+  const invalidEmails: { email: string; reason: string }[] = [];
+
 
   const certificates = await Promise.all(
     records.map(async (record: Record<string, string>) => {
@@ -299,7 +313,8 @@ export async function POST(request: Request) {
 
       // Add placeholders
       (template.placeholders as any[])?.forEach((placeholder: any) => {
-        const value = record[placeholder.name];
+        const key = Object.keys(record).find(k => k.toLowerCase() === placeholder.name.toLowerCase());
+        const value = key ? record[key].trim() : null;
         if (value) {
           const canvasFontSize = placeholder.style.fontSize;
           
@@ -440,17 +455,30 @@ export async function POST(request: Request) {
       </div>
     `;
 
-    const email = record['Email'];
-    if (email) {
-      // Add email sending task to the queue
-      await emailQueue.add('sendEmail', {
-        email,
-        emailFrom,
-        emailSubject,
-        emailMessage,
-        htmlContent,
-        ccEmails,
-      });
+    
+
+    const emailKey = Object.keys(record)
+      .find(k => k.toLowerCase() === 'email');
+
+    if (emailKey) {
+      const emailAddress = record[emailKey].trim();
+      
+      if (isValidEmail(emailAddress)) {
+        await emailQueue.add('sendEmail', {
+          email: emailAddress,
+          emailFrom,
+          emailSubject,
+          emailMessage,
+          htmlContent,
+          ccEmails,
+        });
+      } else {
+        // Store invalid email
+        invalidEmails.push({
+          email: emailAddress,
+          reason: 'Invalid email format'
+        });
+      }
     }
       
 
@@ -458,6 +486,16 @@ export async function POST(request: Request) {
       return certificate;
     })
   );
+
+  if (invalidEmails.length > 0) {
+    await prisma.invalidEmail.createMany({
+      data: invalidEmails.map(({ email, reason }) => ({
+        email,
+        reason,
+        batchId: batch.id,
+      })),
+    });
+  }
 
   return NextResponse.json({ certificates, batchId: batch.id });
 }
