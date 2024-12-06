@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BatchList } from '@/app/components/BatchList';
 import { UserTokenHistory } from '@/app/components/UserTokenHistory';
+import { AnalyticsSummary } from '@/app/components/AnalyticsSummary'; 
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -62,17 +63,19 @@ export default function AnalyticsPage() {
   }
 
   if (!user) {
-    return null; // Router will handle redirect
+    return null; 
   }
 
   return (
     <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
+        <AnalyticsSummary />
+        
         <div className='my-10'>
           <BatchList />
         </div>
         <div className='my-10'>
-        <UserTokenHistory />
+          <UserTokenHistory />
         </div>
       </div>
     </main>
