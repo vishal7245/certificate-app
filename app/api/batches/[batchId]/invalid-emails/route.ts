@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import jwt from 'jsonwebtoken';
 
@@ -22,8 +22,8 @@ function getUserIdFromRequest(request: Request): string | null {
 }
 
 export async function GET(
-    request: Request,
-    context: { params: { batchId: string } }
+    request: NextRequest,
+    context: { params: Promise<{ batchId: string }> }
   ) {
     // Await the params
     const { batchId } = await context.params;

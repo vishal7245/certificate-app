@@ -268,7 +268,7 @@ export default function GeneratePage() {
                       hover:file:bg-blue-100"
             />
             <p className="text-sm text-gray-600 mt-2">
-              If your CSV contains an <strong>Email</strong> column, certificates will be sent to those addresses.
+              If your CSV contains an <strong>Email</strong> column, certificates will be sent to those addresses. <span className="text-red-600 font-medium">Make sure the csv does not have any other columns that contain confidential information.</span>
             </p>
             {csvSummary && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
