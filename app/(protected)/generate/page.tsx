@@ -1,6 +1,6 @@
 // generate/page.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Template } from '@/app/types';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
@@ -17,6 +17,53 @@ interface CsvSummary {
   invalidEmails: string[];
 }
 
+function TemplateSelector({ onSelect }: { onSelect: (template: Template | null) => void }) {
+  const searchParams = useSearchParams();
+  const [templates, setTemplates] = useState<Template[]>([]);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const response = await fetch('/api/templates');
+        if (!response.ok) throw new Error('Failed to fetch templates');
+        const data: Template[] = await response.json();
+        setTemplates(data);
+        
+        const templateId = searchParams.get('templateId');
+        if (templateId) {
+          const selectedTemplate = data.find(t => t.id === templateId);
+          if (selectedTemplate) onSelect(selectedTemplate);
+        }
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+      }
+    };
+    fetchTemplates();
+  }, [searchParams, onSelect]);
+
+  return (
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Select Template
+      </label>
+      <select
+        value={templates.find(t => t.id === searchParams.get('templateId'))?.id || ''}
+        onChange={(e) => {
+          const template = templates.find((t) => t.id === e.target.value);
+          onSelect(template || null);
+        }}
+        className="w-full p-2 border border-gray-300 text-black rounded mb-1 focus:outline-1 focus:outline-blue-500"
+      >
+        <option value="">Select Template</option>
+        {templates.map((template) => (
+          <option key={template.id} value={template.id}>
+            {template.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 function GeneratePageSkeleton() {
   return (
@@ -82,35 +129,8 @@ export default function GeneratePage() {
   const [batchName, setBatchName] = useState('');
   const [csvSummary, setCsvSummary] = useState<CsvSummary | null>(null);
   const [isFormatGuideOpen, setIsFormatGuideOpen] = useState(false);
-  const searchParams = useSearchParams();
 
-  useEffect(() => {
-    if (user) {
-      const fetchTemplates = async () => {
-        try {
-          const response = await fetch('/api/templates');
-          if (!response.ok) {
-            throw new Error('Failed to fetch templates');
-          }
-          const data: Template[] = await response.json();
-          setTemplates(data);
-          
-          // Check for templateId in URL params
-          const templateId = searchParams.get('templateId');
-          if (templateId) {
-            const selectedTemplate = data.find(t => t.id === templateId);
-            if (selectedTemplate) {
-              setSelectedTemplate(selectedTemplate);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching templates:', error);
-          setDialogMessage('Failed to load templates.');
-        }
-      };
-      fetchTemplates();
-    }
-  }, [user, searchParams]);
+  
 
   // Check if the user is authenticated
   useEffect(() => {
@@ -254,26 +274,14 @@ export default function GeneratePage() {
             className="w-full p-2 border border-gray-300 text-black rounded mb-4 focus:outline-1 focus:outline-blue-500"
           />
         </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Template
-            </label>
-            <select
-              value={selectedTemplate?.id || ''}
-              onChange={(e) => {
-                const template = templates.find((t) => t.id === e.target.value);
-                setSelectedTemplate(template || null);
-              }}
-              className="w-full p-2 border border-gray-300 text-black rounded mb-1 focus:outline-1 focus:outline-blue-500"
-            >
-              <option value="">Select Template</option>
-              {templates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                </option>
-              ))}
-            </select>
+        <Suspense fallback={
+          <div className="mb-4 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-24 mb-2"></div>
+            <div className="h-10 bg-gray-200 rounded w-full"></div>
           </div>
+        }>
+          <TemplateSelector onSelect={setSelectedTemplate} />
+        </Suspense>
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               CC Emails (Optional)
