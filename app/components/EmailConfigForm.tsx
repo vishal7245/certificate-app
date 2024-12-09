@@ -19,6 +19,7 @@ export default function EmailConfigForm() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [variablePreview, setVariablePreview] = useState<string>('');
   const [isFetchingConfig, setIsFetchingConfig] = useState(true); 
+  const [subjectPreview, setSubjectPreview] = useState<string>('');
 
   // Skeleton loader component
   function EmailConfigSkeleton() {
@@ -61,6 +62,14 @@ export default function EmailConfigForm() {
       </div>
     );
   }
+
+  useEffect(() => {
+    const previewText = emailConfig.defaultSubject.replace(
+      /<([^>]+)>/g,
+      (match, variable) => `[${variable}]`
+    );
+    setSubjectPreview(previewText);
+  }, [emailConfig.defaultSubject]);
 
   useEffect(() => {
     const fetchEmailConfig = async () => {
@@ -142,8 +151,10 @@ export default function EmailConfigForm() {
       setIsLoading(true);
 
       const variableRegex = /<([^<>]+)>/g;
-      const variables = emailConfig.defaultMessage.match(variableRegex) || [];
-      const invalidVariables = variables.filter(v => !v.match(/^<[A-Za-z][A-Za-z0-9_]*>$/));
+      const messageVariables = emailConfig.defaultMessage.match(variableRegex) || [];
+      const subjectVariables = emailConfig.defaultSubject.match(variableRegex) || [];
+      const allVariables = [...messageVariables, ...subjectVariables];
+      const invalidVariables = allVariables.filter(v => !v.match(/^<[A-Za-z][A-Za-z0-9_]*>$/));
       
       if (invalidVariables.length > 0) {
         throw new Error(`Invalid variable format: ${invalidVariables.join(', ')}. Variables should contain only letters, numbers, and underscores, and start with a letter.`);
@@ -265,14 +276,21 @@ export default function EmailConfigForm() {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Email Subject
         </label>
-        <input
-          type="text"
-          value={emailConfig.defaultSubject}
-          onChange={(e) =>
-            setEmailConfig((prev) => ({ ...prev, defaultSubject: e.target.value }))
-          }
-          className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
-        />
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={emailConfig.defaultSubject}
+            onChange={(e) =>
+              setEmailConfig((prev) => ({ ...prev, defaultSubject: e.target.value }))
+            }
+            className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
+            placeholder="Enter subject. Use <VariableName> to insert dynamic content"
+          />
+          <div className="text-sm text-gray-600">
+            <p className="font-medium mb-1">Preview with variables:</p>
+            <p>{subjectPreview}</p>
+          </div>
+        </div>
       </div>
 
       <div className="mb-6">
