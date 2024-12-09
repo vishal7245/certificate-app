@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Template } from '@/app/types';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
 import { LoadingOverlay } from '@/app/components/LoadingOverlay';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Add this import
+
 
 interface CsvSummary {
   columnNames: string[];
@@ -77,6 +79,8 @@ export default function GeneratePage() {
   const [ccEmails, setCcEmails] = useState<string>('');
   const [batchName, setBatchName] = useState('');
   const [csvSummary, setCsvSummary] = useState<CsvSummary | null>(null);
+  const [isFormatGuideOpen, setIsFormatGuideOpen] = useState(false);
+
 
 
   // Check if the user is authenticated
@@ -253,9 +257,17 @@ export default function GeneratePage() {
             />
           </div>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Upload CSV File
-            </label>
+            <div className="flex justify-between items-center">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload CSV File
+                </label>
+                <button
+                  onClick={() => setIsFormatGuideOpen(true)}
+                  className="text-blue-600 text-sm hover:text-blue-800 underline"
+                >
+                  CSV Format Guide
+                </button>
+              </div>
             <input
               type="file"
               accept=".csv"
@@ -320,6 +332,55 @@ export default function GeneratePage() {
           onOpenChange={setIsDialogOpen}
           message={dialogMessage}
         />
+        <Dialog open={isFormatGuideOpen} onOpenChange={setIsFormatGuideOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>CSV Format Guide</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Your CSV file should include columns that match the placeholders in your certificate template.
+              For example, if your certificate contains <code>{`{{Name}}`}</code> and <code>{`{{Course}}`}</code>,
+              your CSV should have corresponding columns.
+            </p>
+            
+            <div className="border rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-500">John Doe</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">Web Development</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">john@example.com</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-500">Jane Smith</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">Data Science</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">jane@example.com</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-medium text-gray-900">Important Notes:</h3>
+              <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
+                <li>Column headers must exactly match the placeholders in your template (case-sensitive)</li>
+                <li>If you include an <strong>Email</strong> column, certificates will be automatically sent to those addresses</li>
+                <li>Make sure all required placeholders from your template have corresponding columns</li>
+                <li>The CSV file should be comma-separated and UTF-8 encoded</li>
+                <li>Avoid including any sensitive or confidential information in additional columns</li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       </main>
   );
 }
