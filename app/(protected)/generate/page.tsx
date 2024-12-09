@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Template } from '@/app/types';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
 import { LoadingOverlay } from '@/app/components/LoadingOverlay';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Add this import
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSearchParams } from 'next/navigation';
+
 
 
 interface CsvSummary {
@@ -80,8 +82,35 @@ export default function GeneratePage() {
   const [batchName, setBatchName] = useState('');
   const [csvSummary, setCsvSummary] = useState<CsvSummary | null>(null);
   const [isFormatGuideOpen, setIsFormatGuideOpen] = useState(false);
+  const searchParams = useSearchParams();
 
-
+  useEffect(() => {
+    if (user) {
+      const fetchTemplates = async () => {
+        try {
+          const response = await fetch('/api/templates');
+          if (!response.ok) {
+            throw new Error('Failed to fetch templates');
+          }
+          const data: Template[] = await response.json();
+          setTemplates(data);
+          
+          // Check for templateId in URL params
+          const templateId = searchParams.get('templateId');
+          if (templateId) {
+            const selectedTemplate = data.find(t => t.id === templateId);
+            if (selectedTemplate) {
+              setSelectedTemplate(selectedTemplate);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching templates:', error);
+          setDialogMessage('Failed to load templates.');
+        }
+      };
+      fetchTemplates();
+    }
+  }, [user, searchParams]);
 
   // Check if the user is authenticated
   useEffect(() => {
@@ -230,6 +259,7 @@ export default function GeneratePage() {
               Select Template
             </label>
             <select
+              value={selectedTemplate?.id || ''}
               onChange={(e) => {
                 const template = templates.find((t) => t.id === e.target.value);
                 setSelectedTemplate(template || null);

@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Template } from '@/app/types';
+import { Pencil, Trash2, Eye, Wand2 } from 'lucide-react';
+import TemplatePreviewModal from '@/app/components/TemplatePreviewModal';
 
 export default function TemplatesPage() {
   const [user, setUser] = useState<any>(null);
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const router = useRouter();
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
+
 
   function TemplatesPageSkeleton() {
     return (
@@ -77,6 +81,10 @@ export default function TemplatesPage() {
     }
   };
 
+  const handleUseTemplate = (templateId: string) => {
+    router.push(`/generate?templateId=${templateId}`);
+  };
+
   return (
     <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
@@ -103,15 +111,27 @@ export default function TemplatesPage() {
                 </p>
                 <div className="mt-4 flex space-x-2">
                   <Link href={`/templates/${template.id}/edit`}>
-                    <button className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-                      Edit
+                    <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
+                      <Pencil size={20} />
                     </button>
                   </Link>
                   <button
                     onClick={() => handleDelete(template.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                   >
-                    Delete
+                    <Trash2 size={20} />
+                  </button>
+                  <button
+                    onClick={() => setPreviewTemplate(template)}
+                    className="p-2 text-green-500 hover:bg-green-50 rounded-full transition-colors"
+                  >
+                    <Eye size={20} />
+                  </button>
+                  <button
+                    onClick={() => handleUseTemplate(template.id)}
+                    className="p-2 text-purple-500 hover:bg-purple-50 rounded-full transition-colors"
+                  >
+                    <Wand2 size={20} />
                   </button>
                 </div>
               </div>
@@ -121,6 +141,13 @@ export default function TemplatesPage() {
           <p className="text-gray-700">You have no templates yet.</p>
         )}
       </div>
+      {previewTemplate && (
+        <TemplatePreviewModal
+          isOpen={!!previewTemplate}
+          onClose={() => setPreviewTemplate(null)}
+          template={previewTemplate}
+        />
+      )}
     </main>
   );
 }
