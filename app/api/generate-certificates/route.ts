@@ -82,7 +82,7 @@ function isValidEmail(email: string): boolean {
 
 const emailWorker = new Worker('emailQueue', 
   async job => {
-    const { email, emailFrom, emailSubject, emailMessage, htmlContent, ccEmails } = job.data;
+    const { email, emailFrom, emailSubject, emailMessage, htmlContent, ccEmails, bccEmails } = job.data;
     
     if (!isValidEmail(email)) {
       throw new Error(`Invalid email address: ${email}`);
@@ -93,6 +93,7 @@ const emailWorker = new Worker('emailQueue',
         from: emailFrom,
         to: email,
         cc: ccEmails.filter(isValidEmail),
+        bcc: bccEmails.filter(isValidEmail),
         subject: emailSubject,
         text: emailMessage,
         html: htmlContent,
@@ -210,6 +211,11 @@ export async function POST(request: Request) {
     .map(email => email.trim())
     .filter(email => email);
 
+  const bccEmails = (formData.get('bccEmails') as string || '').split(',')
+    .map(email => email.trim())
+    .filter(email => email);
+    
+    
   if (!csvFile) {
     return NextResponse.json({ error: 'No CSV file provided' }, { status: 400 });
   }
@@ -471,6 +477,7 @@ export async function POST(request: Request) {
           emailMessage,
           htmlContent,
           ccEmails,
+          bccEmails,
         });
       } else {
         // Store invalid email

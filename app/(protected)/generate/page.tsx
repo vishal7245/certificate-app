@@ -20,6 +20,7 @@ interface CsvSummary {
 function TemplateSelector({ onSelect }: { onSelect: (template: Template | null) => void }) {
   const searchParams = useSearchParams();
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedId, setSelectedId] = useState<string>(''); // Add local state for selection
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -29,10 +30,14 @@ function TemplateSelector({ onSelect }: { onSelect: (template: Template | null) 
         const data: Template[] = await response.json();
         setTemplates(data);
         
+        // Handle initial template selection from URL
         const templateId = searchParams.get('templateId');
         if (templateId) {
           const selectedTemplate = data.find(t => t.id === templateId);
-          if (selectedTemplate) onSelect(selectedTemplate);
+          if (selectedTemplate) {
+            setSelectedId(templateId);
+            onSelect(selectedTemplate);
+          }
         }
       } catch (error) {
         console.error('Error fetching templates:', error);
@@ -47,9 +52,10 @@ function TemplateSelector({ onSelect }: { onSelect: (template: Template | null) 
         Select Template
       </label>
       <select
-        value={templates.find(t => t.id === searchParams.get('templateId'))?.id || ''}
+        value={selectedId} 
         onChange={(e) => {
           const template = templates.find((t) => t.id === e.target.value);
+          setSelectedId(e.target.value); 
           onSelect(template || null);
         }}
         className="w-full p-2 border border-gray-300 text-black rounded mb-1 focus:outline-1 focus:outline-blue-500"
@@ -129,6 +135,8 @@ export default function GeneratePage() {
   const [batchName, setBatchName] = useState('');
   const [csvSummary, setCsvSummary] = useState<CsvSummary | null>(null);
   const [isFormatGuideOpen, setIsFormatGuideOpen] = useState(false);
+  const [bccEmails, setBccEmails] = useState<string>('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   
 
@@ -222,6 +230,7 @@ export default function GeneratePage() {
         formData.append('csv', csvFile);
         formData.append('templateId', selectedTemplate.id);
         formData.append('ccEmails', ccEmails);
+        formData.append('bccEmails', bccEmails);
         formData.append('batchName', batchName);
          const response = await fetch('/api/generate-certificates', {
           method: 'POST',
@@ -246,6 +255,11 @@ export default function GeneratePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConfirmGenerate = () => {
+    setShowConfirmation(false);
+    handleGenerate();
   };
 
 
@@ -282,7 +296,7 @@ export default function GeneratePage() {
         }>
           <TemplateSelector onSelect={setSelectedTemplate} />
         </Suspense>
-          <div className="mb-6">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               CC Emails (Optional)
             </label>
@@ -290,6 +304,18 @@ export default function GeneratePage() {
               type="text"
               value={ccEmails}
               onChange={(e) => setCcEmails(e.target.value)}
+              placeholder="Enter email addresses separated by commas"
+              className="w-full p-2 border border-gray-300 text-black rounded mb-4 focus:outline-1 focus:outline-blue-500"
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              BCC Emails (Optional)
+            </label>
+            <input
+              type="text"
+              value={bccEmails}
+              onChange={(e) => setBccEmails(e.target.value)}
               placeholder="Enter email addresses separated by commas"
               className="w-full p-2 border border-gray-300 text-black rounded mb-4 focus:outline-1 focus:outline-blue-500"
             />
@@ -355,7 +381,7 @@ export default function GeneratePage() {
           </div>
           <div className="flex justify-end">
             <button
-              onClick={handleGenerate}
+              onClick={() => setShowConfirmation(true)}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               disabled={!selectedTemplate || !csvFile || isLoading}
             >
@@ -415,6 +441,40 @@ export default function GeneratePage() {
                 <li>The CSV file should be comma-separated and UTF-8 encoded</li>
                 <li>Avoid including any sensitive or confidential information in additional columns</li>
               </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog Box */}      
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Certificate Generation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Are you sure you want to generate certificates for this batch?</p>
+            {csvSummary && (
+              <div className="text-sm text-gray-600">
+                <p>• Total Recipients: {csvSummary.totalRows}</p>
+                <p>• Tokens Required: {csvSummary.totalRows * 1}</p>
+                {ccEmails && <p>• CC Recipients: {ccEmails.split(',').filter(e => e.trim()).length}</p>}
+                {bccEmails && <p>• BCC Recipients: {bccEmails.split(',').filter(e => e.trim()).length}</p>}
+              </div>
+            )}
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowConfirmation(false)}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmGenerate}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Confirm
+              </button>
             </div>
           </div>
         </DialogContent>
