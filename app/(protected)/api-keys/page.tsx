@@ -32,12 +32,11 @@ export default function ApiKeysPage() {
         
         const user = await res.json();
         if (!user.is_api_enabled) {
-          console.log(user);
           router.push('/templates');
           return;
         }
         
-         // Only fetch API keys if user is authorized
+        // Only fetch API keys if user is authorized
         await fetchApiKeys();
         setIsLoading(false);
       } catch (error) {
@@ -45,10 +44,8 @@ export default function ApiKeysPage() {
         router.push('/templates');
       }
     };
-     checkAccess();
+    checkAccess();
   }, [router]);
-
-  
 
   const fetchApiKeys = async () => {
     const res = await fetch('/api/api-keys');
@@ -142,6 +139,7 @@ export default function ApiKeysPage() {
           </div>
         )}
 
+        {/* Existing table section */}
         <div className="bg-white shadow rounded-lg">
           <table className="min-w-full">
             <thead>
@@ -176,6 +174,55 @@ export default function ApiKeysPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* New API Documentation Section */}
+        <div className="mt-8 bg-white shadow rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">API Usage</h2>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication</h3>
+              <p className="text-gray-600 mb-2">
+                Include your API key in the request headers using <code>x-api-key</code>:
+              </p>
+              <code className="block bg-gray-50 p-3 rounded">
+                x-api-key: YOUR_API_KEY
+              </code>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Endpoints</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900">List Templates</h4>
+                  <code className="block bg-gray-50 p-3 rounded">
+                    GET /api/v1/templates
+                  </code>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Generate Content</h4>
+                  <code className="block bg-gray-50 p-3 rounded">
+                    POST /api/v1/generate
+                  </code>
+                  <p className="text-gray-600 mt-2">Request body:</p>
+                  <pre className="bg-gray-50 p-3 rounded">
+        {`{
+          "templateId": "string",
+          "email": "user@example.com",
+          "placeholders": {
+            "key": "value"
+          }
+        }`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Rate Limits</h3>
+              <p className="text-gray-600">
+                API requests are limited to 10 requests per seconds.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </main>
