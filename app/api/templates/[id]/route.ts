@@ -50,7 +50,7 @@ export async function GET(
         imageUrl: true,
         placeholders: true,
         signatures: true,
-        qrPlaceholders: true, // Add this line
+        qrPlaceholders: true, 
         width: true,
         height: true,
         creatorId: true,

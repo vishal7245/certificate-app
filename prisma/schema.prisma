@@ -44,6 +44,8 @@ model User {
   emailConfig      EmailConfig?
   tokens           Int           @default(100)
   is_admin         Boolean       @default(false)
+  is_api_enabled   Boolean       @default(false) 
+  apiKeys          ApiKey[]  
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -102,4 +104,16 @@ model EmailConfig {
   customEmail    String?
   isVerified     Boolean  @default(false)
   dkimRecords    Json?    
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  name        String
+  key         String    @unique
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  lastUsed    DateTime?
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
 }

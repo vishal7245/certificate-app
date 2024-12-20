@@ -15,6 +15,8 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [tokens, setTokens] = useState<number>(0);
+  const [isApiEnabled, setIsApiEnabled] = useState(false);
+
 
   const fetchTokens = async () => {
     try {
@@ -28,9 +30,11 @@ export function Navbar() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    console.log(storedUser);
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setIsAdmin(userData.is_admin);
+      setIsApiEnabled(userData.is_api_enabled);
     }
     const fetchTokens = async () => {
       try {
@@ -125,6 +129,16 @@ export function Navbar() {
               >
                 Analytics
               </Link>
+              {isApiEnabled && (
+               <Link
+                 href="/api-keys"
+                 className={
+                   currentPath === '/api-keys' ? activeClassName : inactiveClassName
+                 }
+               >
+                 API Keys
+               </Link>
+             )}
               {isAdmin && (
                 <Link
                   href="/dashboard"
@@ -243,6 +257,17 @@ export function Navbar() {
           >
             Analytics
           </Link>
+          {isApiEnabled && (
+           <Link
+             href="/api-keys"
+             onClick={handleMobileLinkClick}
+             className={
+               currentPath === '/api-keys' ? mobileActiveClassName : mobileInactiveClassName
+             }
+           >
+             API Keys
+           </Link>
+         )}
           {isAdmin && (
             <Link
               href="/dashboard"

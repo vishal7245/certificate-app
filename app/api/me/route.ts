@@ -21,7 +21,8 @@ export async function GET() {
         id: user.id, 
         name: user.name, 
         email: user.email,
-        is_admin: user.is_admin 
+        is_admin: user.is_admin,
+        is_api_enabled: user.is_api_enabled
       });
     } else {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

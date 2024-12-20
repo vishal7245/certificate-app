@@ -22,7 +22,8 @@ export async function POST(request: Request) {
         id: user.id,
         name: user.name,
         email: user.email,
-        is_admin: user.is_admin
+        is_admin: user.is_admin,
+        is_api_enabled: user.is_api_enabled
       }
     });
     response.cookies.set('token', token, { httpOnly: true, maxAge: 604800 });

@@ -263,7 +263,7 @@ export default function GeneratePage() {
   };
 
 
-  if (!user || templates.length === 0) {
+  if (!user ) {
     return <GeneratePageSkeleton />;
   }
 
@@ -289,13 +289,18 @@ export default function GeneratePage() {
           />
         </div>
         <Suspense fallback={
-          <div className="mb-4 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-24 mb-2"></div>
-            <div className="h-10 bg-gray-200 rounded w-full"></div>
-          </div>
-        }>
-          <TemplateSelector onSelect={setSelectedTemplate} />
-        </Suspense>
+         <div className="mb-4 animate-pulse">
+           <div className="h-6 bg-gray-200 rounded w-24 mb-2"></div>
+           <div className="h-10 bg-gray-200 rounded w-full"></div>
+         </div>
+       }>
+         <TemplateSelector onSelect={setSelectedTemplate} />
+         {templates.length === 0 && (
+           <p className="text-sm text-red-600 mb-4">
+             No templates available. Please create a template first.
+           </p>
+         )}
+       </Suspense>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               CC Emails (Optional)

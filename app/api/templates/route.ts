@@ -35,7 +35,8 @@ export async function GET(request: Request) {
       name: true, 
       imageUrl: true, 
       placeholders: true,
-      signatures: true // Include signatures in the response
+      signatures: true,
+      qrPlaceholders: true
     },
   });
 
@@ -92,6 +93,15 @@ export async function POST(request: Request) {
       }
     }
 
+    if (body.qrPlaceholders) {
+      if (!Array.isArray(body.qrPlaceholders)) {
+        return NextResponse.json(
+          { error: "QR placeholders must be an array" },
+          { status: 400 }
+        );
+      }
+    }
+
     const template = await prisma.template.create({
       data: {
         name: body.name,
@@ -99,7 +109,8 @@ export async function POST(request: Request) {
         width: image.width,
         height: image.height,
         placeholders: body.placeholders || [],
-        signatures: body.signatures || [], // Include signatures in template creation
+        signatures: body.signatures || [], 
+        qrPlaceholders: body.qrPlaceholders || [],
         creatorId: userId!,
       },
     });
