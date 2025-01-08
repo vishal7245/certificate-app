@@ -441,7 +441,7 @@ export async function POST(request: Request) {
           <h1 style="font-size: 24px; text-align: center; margin: 0 0 20px 0; color: #004085;">
             ${emailHeading}
           </h1>
-          <p style="font-size: 16px; color: #555; text-align: center;">
+          <p style="font-size: 16px; color: #555;">
             ${emailMessage}
           </p>
           <div style="text-align: center; margin-top: 30px;">
