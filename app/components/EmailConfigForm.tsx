@@ -64,8 +64,16 @@ export default function EmailConfigForm() {
   }
 
   useEffect(() => {
+    const previewText = emailConfig.defaultMessage.replace(
+      /<(?!\/?(b|i|p|br|ul|ol|li|h[1-6]|strong|em|a|span|div)\b)[^>]+>/g,
+      (match, variable) => `[${variable}]`
+    );
+    setVariablePreview(previewText);
+  }, [emailConfig.defaultMessage]);
+
+  useEffect(() => {
     const previewText = emailConfig.defaultSubject.replace(
-      /<([^>]+)>/g,
+      /<(?!\/?(b|i|strong|em|span)\b)[^>]+>/g,
       (match, variable) => `[${variable}]`
     );
     setSubjectPreview(previewText);
@@ -98,13 +106,6 @@ export default function EmailConfigForm() {
     fetchEmailConfig();
   }, []);
 
-  useEffect(() => {
-    const previewText = emailConfig.defaultMessage.replace(
-      /<([^>]+)>/g,
-      (match, variable) => `[${variable}]`
-    );
-    setVariablePreview(previewText);
-  }, [emailConfig.defaultMessage]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -150,10 +151,12 @@ export default function EmailConfigForm() {
     try {
       setIsLoading(true);
 
-      const variableRegex = /<([^<>]+)>/g;
+      const variableRegex = /<(?!\/)[^<>]+>/g;
       const messageVariables = emailConfig.defaultMessage.match(variableRegex) || [];
       const subjectVariables = emailConfig.defaultSubject.match(variableRegex) || [];
-      const allVariables = [...messageVariables, ...subjectVariables];
+      const allVariables = [...messageVariables, ...subjectVariables]
+        .filter(v => !v.match(/^<\/?[a-z][a-z0-9]*>/i)); // Filter out HTML tags
+
       const invalidVariables = allVariables.filter(v => !v.match(/^<[A-Za-z][A-Za-z0-9_]*>$/));
       
       if (invalidVariables.length > 0) {
