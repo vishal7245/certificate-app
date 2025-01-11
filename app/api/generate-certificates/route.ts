@@ -633,6 +633,7 @@ export async function POST(request: Request) {
 
   // 7. Split records into sub-batches & enqueue
   const BATCH_SIZE = 100;
+  const emailConfig = await prisma.emailConfig.findUnique({ where: { userId } });
   const totalRecords = records.length;
   const batches = [];
   for (let i = 0; i < totalRecords; i += BATCH_SIZE) {
@@ -646,7 +647,7 @@ export async function POST(request: Request) {
         templateId,
         batchId: batch.id,
         userId,
-        emailFrom: user.email, // or customEmail from emailConfig
+        emailFrom: emailConfig?.customEmail,
         ccEmails,
         bccEmails,
         batchIndex: index,
