@@ -7,10 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model FailedCertificate {
+  id        String   @id @default(cuid())
+  batchId   String
+  data      Json
+  error     String
+  createdAt DateTime @default(now())
+  batch     Batch    @relation(fields: [batchId], references: [id])
+}
+
 model Batch {
   id           String        @id @default(cuid())
   name         String
   creatorId    String
+  progress         Int     @default(0)
+  failedCertificates FailedCertificate[]
   creator      User          @relation(fields: [creatorId], references: [id])
   certificates Certificate[]
   invalidEmails InvalidEmail[]
