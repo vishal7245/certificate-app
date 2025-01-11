@@ -64,6 +64,29 @@ export function BatchList() {
     }
   }, [selectedBatch, certPage, isDialogOpen]);
 
+
+  const downloadBatchCSV = async (batchId: string, batchName: string) => {
+    try {
+      const response = await fetch(`/api/batches/${batchId}/download`);
+      if (!response.ok) throw new Error('Failed to download batch data');
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${batchName}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to download batch data:', err);
+    }
+  };
+
   const fetchInvalidEmails = async (batchId: string) => {
     try {
       const response = await fetch(`/api/batches/${batchId}/invalid-emails`);
@@ -235,6 +258,12 @@ export function BatchList() {
                     className="text-blue-600 hover:text-blue-900"
                   >
                     View Details
+                  </button>
+                  <button
+                    onClick={() => downloadBatchCSV(batch.id, batch.name)}
+                    className="text-green-600 ml-2 hover:text-green-900"
+                  >
+                    Download
                   </button>
                 </td>
               </tr>
