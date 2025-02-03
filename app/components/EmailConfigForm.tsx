@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FeedbackDialog } from '@/app/components/FeedbackDialog';
 import Image from 'next/image';
+import { MessageEditor } from './MessageEditor'
 
 export default function EmailConfigForm() {
   const [emailConfig, setEmailConfig] = useState({ 
@@ -20,6 +21,7 @@ export default function EmailConfigForm() {
   const [variablePreview, setVariablePreview] = useState<string>('');
   const [isFetchingConfig, setIsFetchingConfig] = useState(true); 
   const [subjectPreview, setSubjectPreview] = useState<string>('');
+  const [subjectHtml, setSubjectHtml] = useState('');
 
   // Skeleton loader component
   function EmailConfigSkeleton() {
@@ -65,7 +67,7 @@ export default function EmailConfigForm() {
 
   useEffect(() => {
     const previewText = emailConfig.defaultMessage.replace(
-      /<(?!\/?(b|i|p|br|ul|ol|li|h[1-6]|strong|em|a|span|div)\b)[^>]+>/g,
+      /~([A-Za-z][A-Za-z0-9_]*)~/g,
       (match, variable) => `[${variable}]`
     );
     setVariablePreview(previewText);
@@ -73,7 +75,7 @@ export default function EmailConfigForm() {
 
   useEffect(() => {
     const previewText = emailConfig.defaultSubject.replace(
-      /<(?!\/?(b|i|strong|em|span)\b)[^>]+>/g,
+      /~([A-Za-z][A-Za-z0-9_]*)~/g,
       (match, variable) => `[${variable}]`
     );
     setSubjectPreview(previewText);
@@ -105,7 +107,6 @@ export default function EmailConfigForm() {
 
     fetchEmailConfig();
   }, []);
-
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -151,13 +152,13 @@ export default function EmailConfigForm() {
     try {
       setIsLoading(true);
 
-      const variableRegex = /<(?!\/)[^<>]+>/g;
+      const variableRegex = /~([A-Za-z][A-Za-z0-9_]*)~/g;
       const messageVariables = emailConfig.defaultMessage.match(variableRegex) || [];
       const subjectVariables = emailConfig.defaultSubject.match(variableRegex) || [];
       const allVariables = [...messageVariables, ...subjectVariables]
-        .filter(v => !v.match(/^<\/?[a-z][a-z0-9]*>/i)); // Filter out HTML tags
+        .map(v => v.slice(1, -1));
 
-      const invalidVariables = allVariables.filter(v => !v.match(/^<[A-Za-z][A-Za-z0-9_]*>$/));
+      const invalidVariables = allVariables.filter(v => !v.match(/^[A-Za-z][A-Za-z0-9_]*$/));
       
       if (invalidVariables.length > 0) {
         throw new Error(`Invalid variable format: ${invalidVariables.join(', ')}. Variables should contain only letters, numbers, and underscores, and start with a letter.`);
@@ -287,7 +288,7 @@ export default function EmailConfigForm() {
               setEmailConfig((prev) => ({ ...prev, defaultSubject: e.target.value }))
             }
             className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
-            placeholder="Enter subject. Use <VariableName> to insert dynamic content"
+            placeholder="Enter subject. Use ~VariableName~ to insert dynamic content"
           />
           <div className="text-sm text-gray-600">
             <p className="font-medium mb-1">Preview with variables:</p>
@@ -301,21 +302,18 @@ export default function EmailConfigForm() {
           Email Message
         </label>
         <div className="space-y-2">
-          <textarea
+          <MessageEditor
             value={emailConfig.defaultMessage}
-            onChange={(e) =>
-              setEmailConfig((prev) => ({ ...prev, defaultMessage: e.target.value }))
+            onChange={(html) => 
+              setEmailConfig(prev => ({ ...prev, defaultMessage: html }))
             }
-            className="w-full p-2 border border-gray-300 rounded focus:outline-1 focus:outline-blue-500"
-            rows={5}
-            placeholder="Enter your message. Use <VariableName> to insert dynamic content (e.g., Dear <Name>)"
           />
           <div className="text-sm text-gray-600">
             <p className="font-medium mb-1">Preview with variables:</p>
             <p className="whitespace-pre-wrap">{variablePreview}</p>
           </div>
           <p className="text-sm text-gray-500">
-            Tip: Use &lt;VariableName&gt; to insert dynamic content from your CSV file (e.g., &lt;Name&gt;, &lt;Course&gt;)
+            Tip: Use ~VariableName~ to insert dynamic content from your CSV file (e.g., ~Name~, ~Course~)
           </p>
         </div>
       </div>

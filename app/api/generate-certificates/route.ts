@@ -209,7 +209,7 @@ async function generateQRCode(data: string): Promise<Buffer> {
 }
 
 function replaceVariables(text: string, data: Record<string, string>): string {
-  return text.replace(/<([^>]+)>/g, (match, variable) => {
+  return text.replace(/~([A-Za-z][A-Za-z0-9_]*)~/g, (match, variable) => {
     const cleanVariable = variable.trim();
     const key = Object.keys(data).find(
       (k) => k.toLowerCase() === cleanVariable.toLowerCase()
@@ -647,7 +647,7 @@ export async function POST(request: Request) {
         templateId,
         batchId: batch.id,
         userId,
-        emailFrom: emailConfig?.customEmail,
+        emailFrom: emailConfig?.customEmail || process.env.EMAIL_FROM,
         ccEmails,
         bccEmails,
         batchIndex: index,
