@@ -93,6 +93,8 @@ const emailWorker = new Worker(
       htmlContent,
       ccEmails,
       bccEmails,
+      userId,
+      batchId,
     } = job.data;
 
     if (!isValidEmail(email)) {
@@ -108,6 +110,14 @@ const emailWorker = new Worker(
         subject: emailSubject,
         text: emailMessage,
         html: htmlContent,
+        headers: {
+          'X-User-Id': userId,
+          'X-Batch-Id': batchId
+        },
+        Tags: [
+          { Name: 'userId', Value: userId },
+          { Name: 'batchId', Value: batchId }
+        ]
       };
 
       // Create transporter for sending email
@@ -362,7 +372,9 @@ async function prepareEmailData(
   emailConfig: any,
   emailFrom: string,
   ccEmails: string[],
-  bccEmails: string[]
+  bccEmails: string[],
+  userId: string,
+  batchId: string
 ) {
   const emailSubject = replaceVariables(
     emailConfig?.defaultSubject || 'Your Certificate',
@@ -415,6 +427,8 @@ async function prepareEmailData(
     htmlContent,
     ccEmails,
     bccEmails,
+    userId,
+    batchId
   };
 }
 
@@ -477,7 +491,9 @@ const certificateWorker = new Worker(
                   emailConfig,
                   emailFrom,
                   ccEmails,
-                  bccEmails
+                  bccEmails,
+                  userId,
+                  batchId
                 );
                 await emailQueue.add('sendEmail', emailData);
               } else {

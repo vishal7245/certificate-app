@@ -128,3 +128,11 @@ model ApiKey {
   expiresAt   DateTime?
   isActive    Boolean   @default(true)
 }
+
+model Bounce {
+  id        String   @id @default(cuid())
+  email     String
+  userId    String
+  batchId   String
+  createdAt DateTime @default(now())
+}

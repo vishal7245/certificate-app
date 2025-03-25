@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BatchList } from '@/app/components/BatchList';
 import { UserTokenHistory } from '@/app/components/UserTokenHistory';
-import { AnalyticsSummary } from '@/app/components/AnalyticsSummary'; 
+import { AnalyticsSummary } from '@/app/components/AnalyticsSummary';
+import { BounceAnalysis } from '@/app/components/BounceAnalysis';
+import { Batch } from '@prisma/client';
 
 export default function AnalyticsPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +32,15 @@ export default function AnalyticsPage() {
         }
 
         setUser(data);
+        
+        // Fetch batches
+        const batchesRes = await fetch('/api/batches');
+        if (!batchesRes.ok) {
+          throw new Error('Failed to fetch batches');
+        }
+        const batchesData = await batchesRes.json();
+        // Extract the batches array from the response
+        setBatches(batchesData.batches || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to authenticate');
         router.push('/login');
@@ -71,6 +83,9 @@ export default function AnalyticsPage() {
       <div className="px-4 py-6 sm:px-0">
         <AnalyticsSummary />
         
+        <div className='my-10'>
+          <BounceAnalysis batches={batches} />
+        </div>
         <div className='my-10'>
           <BatchList />
         </div>
