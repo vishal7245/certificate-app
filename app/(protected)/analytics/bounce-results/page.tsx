@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Batch } from '@prisma/client';
 
@@ -12,7 +12,7 @@ interface BatchDetails extends Batch {
   };
 }
 
-export default function BounceResultsPage() {
+function BounceResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [bouncedEmails, setBouncedEmails] = useState<string[]>([]);
@@ -228,5 +228,19 @@ export default function BounceResultsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function BounceResultsPage() {
+  return (
+    <Suspense fallback={
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+        </div>
+      </main>
+    }>
+      <BounceResultsContent />
+    </Suspense>
   );
 } 
